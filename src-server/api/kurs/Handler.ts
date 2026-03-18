@@ -1,8 +1,9 @@
+import { join } from 'node:path';
 import { FileSystem, HttpClient, HttpClientRequest, Path } from '@effect/platform';
 import { Effect } from 'effect';
 import { DOMParser } from 'linkedom';
 
-const DATA_FILE = 'data/kurs-pajak.json';
+const DATA_FILE = join('data', 'kurs-pajak.json');
 
 interface KursEntry {
   readonly mataUang: string;
@@ -125,7 +126,7 @@ const saveStore = (store: Store) =>
       yield* fs.makeDirectory(dir, { recursive: true });
     }
 
-    yield* fs.writeFileString(DATA_FILE, JSON.stringify(store, null, 2));
+    yield* fs.writeFileString(DATA_FILE, JSON.stringify(store));
   });
 
 export const getOrScrape = (date: string) =>

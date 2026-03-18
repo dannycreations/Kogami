@@ -1,6 +1,6 @@
 import { FetchHttpClient } from '@effect/platform';
 import { BunFileSystem, BunPath } from '@effect/platform-bun';
-import { getOrScrape } from '@server/api/Kurs';
+import { getOrScrape } from '@server/api/kurs/Handler';
 import { LoggerClientLayer, makeLoggerClient } from '@server/structures/LoggerClient';
 import { Effect, Layer, Logger } from 'effect';
 
