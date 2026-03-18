@@ -34,5 +34,5 @@
       "@server/*": ["./src-server/*"]
     }
   },
-  "include": ["src", "src-server"]
+  "include": ["src", "src-server", "scripts"]
 }
