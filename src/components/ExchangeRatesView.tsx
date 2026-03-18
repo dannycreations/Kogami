@@ -1,6 +1,6 @@
 import { FetchHttpClient, HttpClient, HttpClientRequest } from '@effect/platform';
 import { Effect } from 'effect';
-import { Loader2, Search } from 'lucide-react';
+import { Calendar, Loader2, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { ExchangeRateData } from '@server/api/exchange-rates/Handler';
@@ -35,10 +35,18 @@ export const ExchangeRatesView = () => {
   }, []);
 
   useEffect(() => {
-    fetchExchangeRates(date);
+    if (!date.trim()) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchExchangeRates(date);
+    }, 500);
+
+    return () => clearTimeout(timer);
   }, [date, fetchExchangeRates]);
 
-  const filteredEntries = data?.entries.filter((entry) => entry.currency.toLowerCase().includes(currency.toLowerCase())) || [];
+  const filteredEntries = data?.entries?.filter((entry) => entry.currency.toLowerCase().includes(currency.toLowerCase())) || [];
 
   return (
     <div className="space-y-6">
@@ -47,12 +55,26 @@ export const ExchangeRatesView = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-600">Effective Date</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="YYYY-MM-DD"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="w-full pl-4 pr-10 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+              />
+              <div className="absolute right-3 top-2.5 flex items-center">
+                <div className="relative cursor-pointer text-slate-400 hover:text-blue-600 transition-colors">
+                  <Calendar className="h-5 w-5" />
+                  <input
+                    type="date"
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    onChange={(e) => setDate(e.target.value)}
+                    tabIndex={-1}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-600">Currency Code</label>

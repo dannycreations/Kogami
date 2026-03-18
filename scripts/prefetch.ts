@@ -55,12 +55,9 @@ const prefetch = Effect.gen(function* () {
 });
 
 const logger = makeLoggerClient();
-const FSLive = BunFileSystem.layer;
-const PathLive = BunPath.layer;
-const ClientLive = FetchHttpClient.layer;
 
-const AppLive = Layer.mergeAll(FSLive, PathLive, ClientLive, LoggerClientLayer(Logger.defaultLogger, logger));
+const AppLive = Layer.mergeAll(BunPath.layer, BunFileSystem.layer, FetchHttpClient.layer, LoggerClientLayer(Logger.defaultLogger, logger));
 
 const program = prefetch.pipe(Effect.provide(AppLive), Effect.sandbox, Effect.catchAll(Effect.logError));
 
-Effect.runPromise(program as Effect.Effect<void, never, never>);
+Effect.runPromise(program);

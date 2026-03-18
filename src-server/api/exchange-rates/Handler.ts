@@ -136,7 +136,7 @@ export const getOrScrape = (date: string) =>
     const existing = Object.values(store).find((data) => date >= data.startDate && date <= data.endDate);
 
     if (existing) {
-      yield* Effect.logInfo(`Using cached data for ${date} [${existing.startDate} to ${existing.endDate}]`);
+      yield* Effect.logInfo(`Using cached data ${existing.startDate} to ${existing.endDate}`);
       return existing;
     }
 

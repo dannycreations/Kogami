@@ -43,7 +43,7 @@ export const KogamiApp = () => {
           <div className="flex items-center space-x-3 px-4 py-2">
             <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs uppercase">U</div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">Tax Admin</p>
+              <p className="text-sm font-semibold truncate">Admin</p>
               <p className="text-xs text-slate-500 truncate">admin@kogami.io</p>
             </div>
           </div>
