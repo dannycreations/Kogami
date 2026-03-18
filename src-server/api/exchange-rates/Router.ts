@@ -18,9 +18,9 @@ const months: Record<string, string> = {
   Dec: '12',
 };
 
-export const kursRouter = HttpRouter.empty.pipe(
+export const exchangeRatesRouter = HttpRouter.empty.pipe(
   HttpRouter.get(
-    '/kurs',
+    '/exchange-rates',
     Effect.gen(function* () {
       const request = yield* HttpServerRequest.HttpServerRequest;
       const url = new URL(request.url, 'http://localhost');

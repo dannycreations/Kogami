@@ -3,21 +3,21 @@ import { FileSystem, HttpClient, HttpClientRequest, Path } from '@effect/platfor
 import { Effect } from 'effect';
 import { DOMParser } from 'linkedom';
 
-const DATA_FILE = join('data', 'kurs-pajak.json');
+const DATA_FILE = join('data', 'exchange-rates.json');
 
-interface KursEntry {
-  readonly mataUang: string;
-  readonly nilai: number;
+export interface ExchangeRateEntry {
+  readonly currency: string;
+  readonly rate: number;
 }
 
-interface KursData {
+export interface ExchangeRateData {
   readonly startDate: string;
   readonly endDate: string;
-  readonly entries: KursEntry[];
+  readonly entries: ExchangeRateEntry[];
 }
 
 interface Store {
-  readonly [range: string]: KursData;
+  readonly [range: string]: ExchangeRateData;
 }
 
 const parseDateRange = (text: string) => {
@@ -80,12 +80,12 @@ const scrape = (date: string) =>
 
     const rows = Array.from(document.querySelectorAll('table tbody tr'));
     yield* Effect.logInfo(`Found ${rows.length} rows in table`);
-    const entries: KursEntry[] = rows.map((row: any) => {
-      const mataUangFull = row.querySelector('td:nth-child(2) .hidden-xs')?.textContent?.trim() || '';
-      const mataUang = mataUangFull.match(/\(([^)]+)\)/)?.[1] || mataUangFull;
-      const nilaiText = row.querySelector('td:nth-child(3) .m-l-5')?.textContent?.trim() || '0';
-      const nilai = parseFloat(nilaiText.replace(/\./g, '').replace(',', '.'));
-      return { mataUang, nilai };
+    const entries: ExchangeRateEntry[] = rows.map((row: any) => {
+      const currencyFull = row.querySelector('td:nth-child(2) .hidden-xs')?.textContent?.trim() || '';
+      const currency = currencyFull.match(/\(([^)]+)\)/)?.[1] || currencyFull;
+      const rateText = row.querySelector('td:nth-child(3) .m-l-5')?.textContent?.trim() || '0';
+      const rate = parseFloat(rateText.replace(/\./g, '').replace(',', '.'));
+      return { currency, rate };
     });
 
     return {

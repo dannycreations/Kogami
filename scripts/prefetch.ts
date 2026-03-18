@@ -1,6 +1,6 @@
 import { FetchHttpClient } from '@effect/platform';
 import { BunFileSystem, BunPath } from '@effect/platform-bun';
-import { getOrScrape } from '@server/api/kurs/Handler';
+import { getOrScrape } from '@server/api/exchange-rates/Handler';
 import { LoggerClientLayer, makeLoggerClient } from '@server/structures/LoggerClient';
 import { Effect, Layer, Logger } from 'effect';
 
@@ -40,8 +40,8 @@ const prefetch = Effect.gen(function* () {
     }
     processedRanges.add(rangeKey);
 
-    const usd = data.entries.find((e) => e.mataUang === 'USD');
-    yield* Effect.logInfo(`[${data.startDate} to ${data.endDate}] USD: ${usd?.nilai ?? 'N/A'}. Next: ${currentDate}`);
+    const usd = data.entries.find((e) => e.currency === 'USD');
+    yield* Effect.logInfo(`[${data.startDate} to ${data.endDate}] USD: ${usd?.rate ?? 'N/A'}. Next: ${currentDate}`);
 
     const start = new Date(data.startDate);
     start.setDate(start.getDate() - 1);

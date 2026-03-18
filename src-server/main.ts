@@ -1,18 +1,28 @@
-import { FetchHttpClient, HttpServer } from '@effect/platform';
+import { FetchHttpClient, HttpMiddleware, HttpRouter, HttpServer, HttpServerResponse } from '@effect/platform';
 import { BunFileSystem, BunHttpServer, BunPath } from '@effect/platform-bun';
 import { Effect, Layer, Logger } from 'effect';
 
-import { kursRouter } from './api/kurs/Router';
+import { exchangeRatesRouter } from './api/exchange-rates/Router';
 import { LoggerClientLayer, makeLoggerClient } from './structures/LoggerClient';
 
+const router = HttpRouter.empty.pipe(
+  HttpRouter.concat(exchangeRatesRouter),
+  HttpRouter.all('*', HttpServerResponse.empty({ status: 404 })),
+  HttpMiddleware.cors(),
+);
+
 const logger = makeLoggerClient();
-const HttpLive = BunHttpServer.layer({ port: 1800 });
-const FSLive = BunFileSystem.layer;
-const PathLive = BunPath.layer;
-const ClientLive = FetchHttpClient.layer;
 
-const AppLive = Layer.mergeAll(HttpLive, FSLive, PathLive, ClientLive, LoggerClientLayer(Logger.defaultLogger, logger));
+const HttpLive = router.pipe(
+  HttpServer.serve(),
+  HttpServer.withLogAddress,
+  Layer.provide(BunHttpServer.layer({ port: 1730 })),
+  Layer.provide(BunPath.layer),
+  Layer.provide(BunFileSystem.layer),
+  Layer.provide(FetchHttpClient.layer),
+  Layer.provide(LoggerClientLayer(Logger.defaultLogger, logger)),
+);
 
-const program = kursRouter.pipe(HttpServer.serve, Layer.launch).pipe(Effect.provide(AppLive), Effect.sandbox, Effect.catchAll(Effect.logError));
+const program = Layer.launch(HttpLive).pipe(Effect.sandbox, Effect.catchAll(Effect.logError));
 
-Effect.runPromise(program as Effect.Effect<void, never, never>);
+Effect.runPromise(program);
