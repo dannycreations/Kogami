@@ -1,6 +1,6 @@
 import { FetchHttpClient, HttpClient, HttpClientRequest } from '@effect/platform';
 import { Effect } from 'effect';
-import { Calendar, Loader2, Search } from 'lucide-react';
+import { AlertCircle, Calendar, Download, RefreshCw, Search } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
 import type { ExchangeRateData } from '@server/api/exchange-rates/Handler';
@@ -23,7 +23,7 @@ export const ExchangeRatesView = () => {
       return response as ExchangeRateData;
     }).pipe(Effect.provide(FetchHttpClient.layer));
 
-    Effect.runPromise(program as Effect.Effect<ExchangeRateData, any, never>)
+    Effect.runPromise(program)
       .then((result) => {
         setData(result);
         setLoading(false);
@@ -49,115 +49,158 @@ export const ExchangeRatesView = () => {
   const filteredEntries = data?.entries?.filter((entry) => entry.currency.toLowerCase().includes(currency.toLowerCase())) || [];
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <h2 className="text-xl font-semibold text-slate-800 mb-4">Search Exchange Rates</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-600">Effective Date</label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="YYYY-MM-DD"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                className="w-full pl-4 pr-10 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-              />
-              <div className="absolute right-3 top-2.5 flex items-center">
-                <div className="relative cursor-pointer text-slate-400 hover:text-blue-600 transition-colors">
-                  <Calendar className="h-5 w-5" />
-                  <input
-                    type="date"
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                    onChange={(e) => setDate(e.target.value)}
-                    tabIndex={-1}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-slate-600">Currency Code</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search currency (e.g. USD, EUR)"
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-              />
-            </div>
-          </div>
+    <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
+      <div className="flex items-end justify-between">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-surface-900">Exchange Rates Matrix</h2>
+          <p className="text-xs text-surface-500 mt-0.5">KMK (Keputusan Menteri Keuangan) Tax Reference Rates</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => fetchExchangeRates(date)}
+            className="compact-button bg-white text-surface-700 border border-surface-200 hover:bg-surface-50"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? 'animate-spin text-brand-500' : 'text-surface-500'}`} />
+            <span>Sync</span>
+          </button>
+          <button className="compact-button bg-brand-800 text-white hover:bg-brand-900 shadow-sm border border-brand-900/50">
+            <Download className="h-3.5 w-3.5 mr-1.5" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 
-      {loading && (
-        <div className="flex flex-col items-center justify-center py-20 space-y-4">
-          <Loader2 className="h-10 w-10 text-blue-500 animate-spin" />
-          <p className="text-slate-500 font-medium">Fetching latest exchange rates...</p>
+      <div className="flex items-center space-x-3 bg-white p-3 rounded shadow-sm border border-surface-200 mt-3.5">
+        <div className="flex-1 flex items-center space-x-3 max-w-xl">
+          <div className="w-1/2 relative">
+            <label className="absolute left-3 top-0 -translate-y-1/2 text-[9px] font-bold uppercase tracking-wider text-surface-400 select-none pointer-events-none bg-white px-1.5 z-30">
+              Effective Date
+            </label>
+            <input
+              type="text"
+              placeholder="YYYY-MM-DD"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="compact-input w-full pl-3 pr-8 !py-2 !h-11 !relative z-10"
+            />
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center z-30">
+              <div className="relative cursor-pointer text-surface-400 hover:text-brand-600 transition-colors">
+                <Calendar className="h-4 w-4" />
+                <input
+                  type="date"
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  onChange={(e) => setDate(e.target.value)}
+                  tabIndex={-1}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="w-1/2 relative">
+            <label className="absolute left-8 top-0 -translate-y-1/2 text-[9px] font-bold uppercase tracking-wider text-surface-400 select-none pointer-events-none bg-white px-1.5 z-30">
+              Currency Find
+            </label>
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-surface-400 z-20" />
+            <input
+              type="text"
+              placeholder="Ex. USD, EUR"
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="compact-input w-full pl-8 pr-3 !py-2 !h-11 !relative z-10"
+            />
+          </div>
         </div>
-      )}
+
+        {data && !loading && (
+          <div className="ml-auto flex items-center px-3 py-1.5 bg-brand-50 border border-brand-100 rounded text-xs">
+            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></div>
+            <span className="text-brand-800 font-medium">Valid Data Active</span>
+            <span className="mx-2 text-brand-300">|</span>
+            <span className="text-surface-500 font-mono">
+              Period: {data.startDate} &mdash; {data.endDate}
+            </span>
+          </div>
+        )}
+      </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg">
-          <p className="font-medium">Error fetching data</p>
-          <p className="text-sm opacity-90">{error}</p>
+        <div className="bg-red-50 border-l-2 border-red-500 text-red-800 p-3 rounded-r text-sm flex items-start shadow-sm mt-4">
+          <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-600 shrink-0" />
+          <div>
+            <p className="font-bold">Sync Error</p>
+            <p className="opacity-90 mt-0.5">{error}</p>
+          </div>
         </div>
       )}
 
-      {!loading && data && (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-            <div>
-              <h3 className="font-bold text-slate-800">Exchange Rates Period</h3>
-              <p className="text-sm text-slate-500">
-                {data.startDate} to {data.endDate}
-              </p>
-            </div>
-            <span className="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full uppercase tracking-wider">Official Data</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50/50">
-                  <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">Currency</th>
-                  <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 text-right">
-                    Rate (IDR)
-                  </th>
+      <div className="table-container flex-1 flex flex-col min-h-0 mt-3.5">
+        <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar">
+          <table className="w-full text-left border-collapse relative">
+            <thead className="sticky top-0 z-10 shadow-sm bg-surface-50">
+              <tr className="table-header">
+                <th className="px-4 py-2 w-16 text-center border-r border-surface-200 bg-surface-50">Flag</th>
+                <th className="px-4 py-2 border-r border-surface-200 bg-surface-50">Currency Code</th>
+                <th className="px-4 py-2 border-r border-surface-200 text-right bg-surface-50">Base Rate (IDR)</th>
+                <th className="px-4 py-2 text-center text-surface-400 font-medium bg-surface-50">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-100 bg-white">
+              {loading ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-16 text-center">
+                    <div className="inline-flex items-center justify-center p-3 rounded-full bg-brand-50 mb-3">
+                      <RefreshCw className="h-5 w-5 text-brand-500 animate-spin" />
+                    </div>
+                    <p className="text-sm font-medium text-surface-600">Querying central database...</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredEntries.map((entry) => (
-                  <tr key={entry.currency} className="hover:bg-slate-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-xs">
-                          {entry.currency.substring(0, 2)}
-                        </div>
-                        <span className="font-semibold text-slate-700">{entry.currency}</span>
+              ) : filteredEntries.length > 0 ? (
+                filteredEntries.map((entry) => (
+                  <tr key={entry.currency} className="table-row group">
+                    <td className="table-cell border-r border-surface-100 p-0 text-center align-middle">
+                      <div className="mx-auto inline-flex w-7 h-5 rounded-sm bg-surface-100 items-center justify-center text-[10px] font-bold text-surface-500 border border-surface-200 shadow-sm overflow-hidden">
+                        {entry.currency.substring(0, 2)}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right font-mono text-slate-900">
-                      {new Intl.NumberFormat('id-ID', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }).format(entry.rate)}
+                    <td className="table-cell border-r border-surface-100">
+                      <div className="flex items-center">
+                        <span className="font-mono font-bold text-brand-900 bg-brand-50 px-1.5 py-0.5 rounded text-xs border border-brand-100 mr-2 group-hover:bg-white transition-colors">
+                          {entry.currency}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="table-cell border-r border-surface-100 text-right">
+                      <span className="font-mono text-[13px] font-medium text-surface-800">
+                        {new Intl.NumberFormat('id-ID', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }).format(entry.rate)}
+                      </span>
+                    </td>
+                    <td className="table-cell text-center">
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Active
+                      </span>
                     </td>
                   </tr>
-                ))}
-                {filteredEntries.length === 0 && (
-                  <tr>
-                    <td colSpan={2} className="px-6 py-10 text-center text-slate-400 italic">
-                      No currency matches your search
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                ))
+              ) : data ? (
+                <tr>
+                  <td colSpan={4} className="px-4 py-12 text-center text-surface-400 text-sm">
+                    No currency matches the search criteria.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
-      )}
+
+        <div className="bg-surface-50 border-t border-surface-200 px-4 py-2 text-[10px] text-surface-500 flex justify-between items-center font-mono">
+          <span>Total Entries: {filteredEntries.length}</span>
+          <span>Data Source: Ministry of Finance RI</span>
+        </div>
+      </div>
     </div>
   );
 };

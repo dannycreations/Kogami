@@ -1,1 +1,88 @@
 @import 'tailwindcss';
+@import 'tailwindcss/theme' layer(theme);
+
+@theme {
+  --font-sans:
+    'Albert Sans', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+  /* Custom colors matching "tax input and reporting helper" - elegant, restrained, utilitarian */
+  --color-brand-50: #f6f7fb;
+  --color-brand-100: #eef1f6;
+  --color-brand-200: #d9e1ee;
+  --color-brand-300: #b9c9e2;
+  --color-brand-400: #93aed4;
+  --color-brand-500: #7492c7;
+  --color-brand-600: #5b75b3;
+  --color-brand-700: #4b5e95;
+  --color-brand-800: #3f4e7c;
+  --color-brand-900: #364263;
+  --color-brand-950: #232a3e;
+
+  /* Surface colors */
+  --color-surface-50: #fafafa;
+  --color-surface-100: #f4f4f5;
+  --color-surface-200: #e4e4e7;
+  --color-surface-300: #d4d4d8;
+  --color-surface-400: #a1a1aa;
+  --color-surface-500: #71717a;
+  --color-surface-600: #52525b;
+  --color-surface-700: #3f3f46;
+  --color-surface-800: #27272a;
+  --color-surface-900: #18181b;
+  --color-surface-950: #09090b;
+
+  --color-accent-blue: #0ea5e9;
+  --color-accent-blue-subtle: #e0f2fe;
+}
+
+@layer base {
+  body {
+    @apply font-sans text-surface-900 bg-surface-50 antialiased selection:bg-brand-200 selection:text-brand-950;
+  }
+}
+
+@layer utilities {
+  .compact-input {
+    @apply h-8 px-3 py-1 text-sm border border-surface-200 bg-white rounded transition-colors focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none;
+  }
+
+  .compact-button {
+    @apply h-8 px-3 py-1 text-sm font-medium rounded transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-brand-500 active:scale-[0.98] inline-flex items-center justify-center;
+  }
+
+  .table-container {
+    @apply w-full border border-surface-200 bg-white rounded shadow-sm overflow-hidden;
+  }
+
+  .table-header {
+    @apply bg-surface-50 border-b border-surface-200 text-xs font-semibold text-surface-600 uppercase tracking-wider select-none;
+  }
+
+  .table-row {
+    @apply border-b border-surface-100 hover:bg-brand-50/50 transition-colors last:border-0;
+  }
+
+  .table-cell {
+    @apply px-4 py-2.5 text-sm whitespace-nowrap text-surface-700;
+  }
+
+  /* Custom scrollbar for tables */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-surface-300 rounded-full;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-400;
+  }
+}

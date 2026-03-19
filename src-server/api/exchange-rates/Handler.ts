@@ -3,6 +3,8 @@ import { FileSystem, HttpClient, HttpClientRequest, Path } from '@effect/platfor
 import { Effect } from 'effect';
 import { DOMParser } from 'linkedom';
 
+import type { ReadonlyRecord } from 'effect/Record';
+
 const DATA_FILE = join('data', 'exchange-rates.json');
 
 export interface ExchangeRateEntry {
@@ -20,22 +22,43 @@ interface Store {
   readonly [range: string]: ExchangeRateData;
 }
 
-const parseDateRange = (text: string) => {
-  const months: Record<string, string> = {
-    Januari: '01',
-    Februari: '02',
-    Maret: '03',
-    April: '04',
-    Mei: '05',
-    Juni: '06',
-    Juli: '07',
-    Agustus: '08',
-    September: '09',
-    Oktober: '10',
-    November: '11',
-    Desember: '12',
-  };
+const MONTHS: ReadonlyRecord<string, string> = {
+  jan: '01',
+  feb: '02',
+  mar: '03',
+  apr: '04',
+  may: '05',
+  jun: '06',
+  jul: '07',
+  aug: '08',
+  sep: '09',
+  oct: '10',
+  nov: '11',
+  dec: '12',
+};
 
+export const normalizeDate = (date: string | null): string | null => {
+  if (!date) {
+    return null;
+  }
+
+  let normalized = date;
+  if (/^\w{3},\s+\w{3}\s+\d{1,2},\s+\d{4}$/.test(date)) {
+    const match = date.match(/^\w{3},\s+(\w{3})\s+(\d{1,2}),\s+(\d{4})$/);
+    if (match && MONTHS[match[1]?.toLowerCase()]) {
+      const [, month, day, year] = match;
+      normalized = `${year}-${MONTHS[month.toLowerCase()]}-${day.padStart(2, '0')}`;
+    }
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return normalized;
+  }
+
+  return null;
+};
+
+const parseDateRange = (text: string) => {
   const match = text.match(/(\d+)\s+(\w+)\s+(\d+)\s+-\s+(\d+)\s+(\w+)\s+(\d+)/);
   if (!match) {
     return null;
@@ -43,8 +66,8 @@ const parseDateRange = (text: string) => {
 
   const [, sDay, sMonth, sYear, eDay, eMonth, eYear] = match;
 
-  const start = `${sYear}-${months[sMonth]}-${sDay.padStart(2, '0')}`;
-  const end = `${eYear}-${months[eMonth]}-${eDay.padStart(2, '0')}`;
+  const start = `${sYear}-${MONTHS[sMonth.slice(0, 3).toLowerCase()]}-${sDay.padStart(2, '0')}`;
+  const end = `${eYear}-${MONTHS[eMonth.slice(0, 3).toLowerCase()]}-${eDay.padStart(2, '0')}`;
 
   return { start, end };
 };
@@ -68,9 +91,8 @@ const scrape = (date: string) =>
     );
 
     const dom = new DOMParser().parseFromString(response, 'text/html');
-    const document: HTMLDocument = (dom as any).document || dom;
 
-    const rangeText = document.querySelector('.text-muted em')?.textContent || '';
+    const rangeText = dom.querySelector('.text-muted em')?.textContent || '';
     yield* Effect.logInfo(`Range text found: "${rangeText.trim()}"`);
     const range = parseDateRange(rangeText);
 
@@ -78,7 +100,7 @@ const scrape = (date: string) =>
       return yield* Effect.fail(new Error(`Could not parse date range from: "${rangeText}"`));
     }
 
-    const rows = Array.from(document.querySelectorAll('table tbody tr'));
+    const rows = Array.from(dom.querySelectorAll('table tbody tr'));
     yield* Effect.logInfo(`Found ${rows.length} rows in table`);
     const entries: ExchangeRateEntry[] = rows.map((row: any) => {
       const currencyFull = row.querySelector('td:nth-child(2) .hidden-xs')?.textContent?.trim() || '';

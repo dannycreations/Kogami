@@ -1,71 +1,92 @@
 import './styles.css';
 
-import { FileText, LayoutDashboard, Settings } from 'lucide-react';
+import { BookMarked, Calculator, Clock, DownloadCloud, FileSpreadsheet, FileText, Fingerprint, LayoutDashboard, Settings } from 'lucide-react';
 import { useState } from 'react';
 
 import { ExchangeRatesView } from '../components/ExchangeRatesView';
 
 const NAV_LIST = [
-  { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-  { id: 'exchange-rates', name: 'Exchange Rates', icon: FileText },
-  { id: 'settings', name: 'Settings', icon: Settings },
+  { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
+  { id: 'transactions', name: 'Transactions', icon: FileSpreadsheet },
+  { id: 'exchange-rates', name: 'Exchange Rates', icon: Calculator },
+  { id: 'reports', name: 'Tax Reports', icon: FileText },
+  { id: 'export', name: 'Data Export', icon: DownloadCloud },
+  { id: 'audit', name: 'Audit Log', icon: Clock },
 ] as const;
 
 export const KogamiApp = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'exchange-rates' | 'settings'>('exchange-rates');
+  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id']>('exchange-rates');
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <aside className="w-64 bg-slate-900 text-white flex flex-col fixed inset-y-0 left-0 z-50">
-        <div className="p-6 border-b border-slate-800">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg shadow-blue-500/20">K</div>
-            <span className="text-xl font-bold tracking-tight">Kogami</span>
+    <div className="min-h-screen bg-[#fafafa] flex text-surface-900 font-sans">
+      <aside className="w-56 bg-[#f6f7fb] border-r border-surface-200 flex flex-col fixed inset-y-0 left-0 z-50">
+        <div className="p-5 border-b border-surface-200">
+          <div className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 bg-brand-800 rounded flex items-center justify-center shadow-sm">
+              <Fingerprint className="h-5 w-5 text-white" strokeWidth={1.5} />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold tracking-tight text-surface-900 leading-tight">Kogami Tax</span>
+              <span className="text-[10px] uppercase tracking-wider text-surface-500 font-semibold">Workspace</span>
+            </div>
           </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1">
-          {NAV_LIST.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id as any)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all ${
-                activeTab === item.id ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="font-medium text-sm uppercase tracking-wide">{item.name}</span>
-            </button>
-          ))}
-        </nav>
+        <div className="flex-1 py-4 overflow-y-auto">
+          <div className="px-3 mb-2">
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-surface-400 mb-2">Tools</p>
+            <nav className="space-y-0.5">
+              {NAV_LIST.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm group ${
+                    activeTab === item.id
+                      ? 'bg-brand-100 text-brand-900 font-medium shadow-sm'
+                      : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                  }`}
+                >
+                  <item.icon
+                    className={`h-4 w-4 ${activeTab === item.id ? 'text-brand-700' : 'text-surface-400 group-hover:text-surface-600'}`}
+                    strokeWidth={activeTab === item.id ? 2 : 1.5}
+                  />
+                  <span>{item.name}</span>
+                </button>
+              ))}
+            </nav>
+          </div>
 
-        <div className="p-4 mt-auto border-t border-slate-800">
-          <div className="flex items-center space-x-3 px-4 py-2">
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center font-bold text-xs uppercase">U</div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">Admin</p>
-              <p className="text-xs text-slate-500 truncate">admin@kogami.io</p>
-            </div>
+          <div className="px-3 mt-6">
+            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-surface-400 mb-2">System</p>
+            <nav className="space-y-0.5">
+              <button className="w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm text-surface-600 hover:bg-surface-100 hover:text-surface-900 group">
+                <BookMarked className="h-4 w-4 text-surface-400 group-hover:text-surface-600" strokeWidth={1.5} />
+                <span>Documentation</span>
+              </button>
+              <button className="w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm text-surface-600 hover:bg-surface-100 hover:text-surface-900 group">
+                <Settings className="h-4 w-4 text-surface-400 group-hover:text-surface-600" strokeWidth={1.5} />
+                <span>Settings</span>
+              </button>
+            </nav>
           </div>
         </div>
       </aside>
 
-      <main className="ml-64 flex-1 flex flex-col">
-        <header className="h-20 bg-white border-b border-slate-200 px-8 flex items-center justify-between sticky top-0 z-40 shadow-sm shadow-slate-200/50">
-          <h1 className="text-2xl font-bold text-slate-800 capitalize tracking-tight">{activeTab.replace('-', ' ')} Portal</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-slate-500 font-medium">
-              System Status: <span className="text-emerald-500 font-bold">Online</span>
-            </span>
+      <main className="ml-56 flex-1 flex flex-col min-h-screen relative">
+        <header className="h-14 bg-white/80 backdrop-blur-md border-b border-surface-200 px-6 flex items-center justify-between sticky top-0 z-40">
+          <div className="flex items-center">
+            <h1 className="text-base font-semibold text-surface-800 capitalize">{activeTab.replace('-', ' ')}</h1>
           </div>
         </header>
 
-        <div className="p-8 max-w-6xl mx-auto w-full">
+        <div className="flex-1 p-6 w-full">
           {activeTab === 'exchange-rates' ? (
             <ExchangeRatesView />
           ) : (
-            <div className="h-64 flex items-center justify-center bg-white rounded-xl border-2 border-dashed border-slate-200 text-slate-400">
-              <p className="text-lg font-medium tracking-tight">This section is under construction</p>
+            <div className="h-64 flex flex-col items-center justify-center bg-white rounded border border-dashed border-surface-300 text-surface-500">
+              <FileSpreadsheet className="h-8 w-8 text-surface-300 mb-3" strokeWidth={1} />
+              <p className="text-sm font-medium">Module not configured</p>
+              <p className="text-xs text-surface-400 mt-1">Select Exchange Rates to proceed with tax calculation.</p>
             </div>
           )}
         </div>
