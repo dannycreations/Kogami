@@ -35,6 +35,20 @@ const MONTHS: ReadonlyRecord<string, string> = {
   oct: '10',
   nov: '11',
   dec: '12',
+
+  // Handling Indonesian month names if they appear
+  januari: '01',
+  februari: '02',
+  maret: '03',
+  april: '04',
+  mei: '05',
+  juni: '06',
+  juli: '07',
+  agustus: '08',
+  september: '09',
+  oktober: '10',
+  november: '11',
+  desember: '12',
 };
 
 export const normalizeDate = (date: string | null): string | null => {
@@ -66,8 +80,15 @@ const parseDateRange = (text: string) => {
 
   const [, sDay, sMonth, sYear, eDay, eMonth, eYear] = match;
 
-  const start = `${sYear}-${MONTHS[sMonth.slice(0, 3).toLowerCase()]}-${sDay.padStart(2, '0')}`;
-  const end = `${eYear}-${MONTHS[eMonth.slice(0, 3).toLowerCase()]}-${eDay.padStart(2, '0')}`;
+  const startMonth = MONTHS[sMonth.toLowerCase()];
+  const endMonth = MONTHS[eMonth.toLowerCase()];
+
+  if (!startMonth || !endMonth) {
+    return null;
+  }
+
+  const start = `${sYear}-${startMonth}-${sDay.padStart(2, '0')}`;
+  const end = `${eYear}-${endMonth}-${eDay.padStart(2, '0')}`;
 
   return { start, end };
 };
@@ -148,14 +169,37 @@ const saveStore = (store: Store) =>
       yield* fs.makeDirectory(dir, { recursive: true });
     }
 
-    yield* fs.writeFileString(DATA_FILE, JSON.stringify(store));
+    // Sort keys descending so newest ranges are at the top
+    const sortedStore: Store = Object.keys(store)
+      .sort((a, b) => b.localeCompare(a))
+      .reduce((acc, key) => {
+        acc[key] = store[key]!;
+        return acc;
+      }, {} as any);
+
+    yield* fs.writeFileString(DATA_FILE, JSON.stringify(sortedStore));
   });
 
 export const getOrScrape = (date: string) =>
   Effect.gen(function* () {
     const store = yield* getStore;
 
-    const existing = Object.values(store).find((data) => date >= data.startDate && date <= data.endDate);
+    const existing = Object.values(store).find((data) => {
+      const isDateInRange = date >= data.startDate && date <= data.endDate;
+      if (!isDateInRange) return false;
+
+      const rangeDuration = (new Date(data.endDate).getTime() - new Date(data.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1;
+
+      // If the date is in the past or present, we want the shortest possible range (usually 7 days)
+      // Long ranges are only acceptable for future dates where short ranges don't exist yet.
+      const today = new Date().toISOString().split('T')[0];
+      // Force refresh if the range is long AND (it covers past/present date OR the date we want is past/present)
+      if (rangeDuration > 7 && (today >= data.startDate || date <= today)) {
+        return false;
+      }
+
+      return true;
+    });
 
     if (existing) {
       yield* Effect.logInfo(`Using cached data ${existing.startDate} to ${existing.endDate}`);
@@ -166,7 +210,26 @@ export const getOrScrape = (date: string) =>
     const data = yield* scrape(date);
 
     const rangeKey = `${data.startDate}_${data.endDate}`;
-    const updatedStore = { ...store, [rangeKey]: data };
+    const rangeDuration = (new Date(data.endDate).getTime() - new Date(data.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1;
+
+    let updatedStore = { ...store };
+
+    // If we just scraped a 7-day range, and there's a longer range that contains it,
+    // we should remove the longer range as it's now redundant/obsolete.
+    if (rangeDuration <= 7) {
+      for (const [key, existingData] of Object.entries(store)) {
+        if (data.startDate >= existingData.startDate && data.endDate <= existingData.endDate && key !== rangeKey) {
+          const existingDuration =
+            (new Date(existingData.endDate).getTime() - new Date(existingData.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1;
+          if (existingDuration > rangeDuration) {
+            yield* Effect.logInfo(`Removing redundant longer range: ${key}`);
+            delete updatedStore[key];
+          }
+        }
+      }
+    }
+
+    updatedStore[rangeKey] = data;
     yield* saveStore(updatedStore);
 
     return data;
