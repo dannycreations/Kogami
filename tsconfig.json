@@ -8,6 +8,11 @@
     "moduleResolution": "bundler",
     "moduleDetection": "force",
     "isolatedModules": false,
+    "plugins": [
+      {
+        "name": "@effect/language-service"
+      }
+    ],
 
     "outDir": "dist",
     "declaration": true,
@@ -26,6 +31,8 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
 
     "allowJs": false,
     "skipLibCheck": true,

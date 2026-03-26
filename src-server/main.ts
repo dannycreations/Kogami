@@ -3,10 +3,12 @@ import { BunFileSystem, BunHttpServer, BunPath } from '@effect/platform-bun';
 import { Effect, Layer, Logger } from 'effect';
 
 import { exchangeRatesRouter } from './api/exchange-rates/Router';
+import { interestRatesRouter } from './api/interest-rates/Router';
 import { LoggerClientLayer, makeLoggerClient } from './structures/LoggerClient';
 
 const router = HttpRouter.empty.pipe(
   HttpRouter.concat(exchangeRatesRouter),
+  HttpRouter.concat(interestRatesRouter),
   HttpRouter.all('*', HttpServerResponse.empty({ status: 404 })),
   HttpMiddleware.cors(),
 );

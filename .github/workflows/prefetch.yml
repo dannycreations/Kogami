@@ -1,4 +1,4 @@
-name: Prefetch Exchange Rates
+name: Prefetch Rates
 
 on:
   schedule:
@@ -27,4 +27,5 @@ jobs:
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
           git add data/exchange-rates.json
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(data): update exchange rates" && git push)
+          git add data/interest-rates.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(data): update rates" && git push)

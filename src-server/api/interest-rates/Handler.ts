@@ -5,21 +5,21 @@ import { DOMParser } from 'linkedom';
 
 import type { ReadonlyRecord } from 'effect/Record';
 
-export const EXCHANGE_RATES_FILE = join('data', 'exchange-rates.json');
+export const INTEREST_RATES_FILE = join('data', 'interest-rates.json');
 
-export interface ExchangeRateEntry {
-  readonly currency: string;
+export interface InterestRateEntry {
+  readonly tags: string;
   readonly rate: number;
 }
 
-export interface ExchangeRateData {
+export interface InterestRateData {
   readonly startDate: string;
   readonly endDate: string;
-  readonly entries: ExchangeRateEntry[];
+  readonly entries: InterestRateEntry[];
 }
 
 interface Store {
-  readonly [range: string]: ExchangeRateData;
+  readonly [range: string]: InterestRateData;
 }
 
 const MONTHS: ReadonlyRecord<string, string> = {
@@ -36,7 +36,6 @@ const MONTHS: ReadonlyRecord<string, string> = {
   nov: '11',
   dec: '12',
 
-  // Handling Indonesian month names if they appear
   januari: '01',
   februari: '02',
   maret: '03',
@@ -56,19 +55,8 @@ export const normalizeDate = (date: string | null): string | null => {
     return null;
   }
 
-  let normalized = date;
-  if (/^\w{3},\s+\w{3}\s+\d{1,2},\s+\d{4}$/.test(date)) {
-    const match = date.match(/^\w{3},\s+(\w{3})\s+(\d{1,2}),\s+(\d{4})$/);
-    const monthName = match?.[1]?.toLowerCase();
-    if (match && monthName && MONTHS[monthName]) {
-      const day = match[2]!;
-      const year = match[3]!;
-      normalized = `${year}-${MONTHS[monthName]}-${day.padStart(2, '0')}`;
-    }
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-    return normalized;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
   }
 
   return null;
@@ -103,7 +91,7 @@ const parseDateRange = (text: string) => {
 const scrape = (date: string) =>
   Effect.gen(function* () {
     const client = yield* HttpClient.HttpClient;
-    const url = `https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak?date=${date}`;
+    const url = `https://fiskal.kemenkeu.go.id/informasi-publik/tarif-bunga?date=${date}`;
 
     yield* Effect.logInfo(`Fetching URL: ${url}`);
     const response = yield* HttpClientRequest.get(url).pipe(
@@ -130,12 +118,14 @@ const scrape = (date: string) =>
 
     const rows = Array.from(dom.querySelectorAll('table tbody tr'));
     yield* Effect.logInfo(`Found ${rows.length} rows in table`);
-    const entries: ExchangeRateEntry[] = rows.map((row: any) => {
-      const currencyFull = row.querySelector('td:nth-child(2) .hidden-xs')?.textContent?.trim() || '';
-      const currency = currencyFull.match(/\(([^)]+)\)/)?.[1] || currencyFull;
-      const rateText = row.querySelector('td:nth-child(3) .m-l-5')?.textContent?.trim() || '0';
-      const rate = parseFloat(rateText.replace(/\./g, '').replace(',', '.'));
-      return { currency, rate };
+    const entries: InterestRateEntry[] = rows.map((row: any) => {
+      const tags = row.querySelector('td.text-left')?.textContent?.trim() || '';
+      const rateText = row.querySelector('td:last-child')?.textContent?.trim() || '0';
+      // Extract rate: "0,53% (nol koma lima tiga persen)" -> "0,53"
+      const rateMatch = rateText.match(/([\d,]+)%/);
+      const rateRaw = rateMatch ? rateMatch[1] : '0';
+      const rate = parseFloat(rateRaw!.replace(',', '.'));
+      return { tags, rate };
     });
 
     return {
@@ -148,13 +138,13 @@ const scrape = (date: string) =>
 const getStore = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
 
-  const exists = yield* fs.exists(EXCHANGE_RATES_FILE);
+  const exists = yield* fs.exists(INTEREST_RATES_FILE);
 
   if (!exists) {
     return {};
   }
 
-  const content = yield* fs.readFileString(EXCHANGE_RATES_FILE);
+  const content = yield* fs.readFileString(INTEREST_RATES_FILE);
   try {
     return JSON.parse(content) as Store;
   } catch (e) {
@@ -164,19 +154,18 @@ const getStore = Effect.gen(function* () {
 
 const saveStore = (store: Store) =>
   Effect.gen(function* () {
-    yield* Effect.logInfo(`Saving store to ${EXCHANGE_RATES_FILE}...`);
+    yield* Effect.logInfo(`Saving store to ${INTEREST_RATES_FILE}...`);
 
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
 
-    const dir = path.dirname(EXCHANGE_RATES_FILE);
+    const dir = path.dirname(INTEREST_RATES_FILE);
     const exists = yield* fs.exists(dir);
 
     if (!exists) {
       yield* fs.makeDirectory(dir, { recursive: true });
     }
 
-    // Sort keys descending so newest ranges are at the top
     const sortedStore: Store = Object.keys(store)
       .sort((a, b) => b.localeCompare(a))
       .reduce((acc, key) => {
@@ -184,7 +173,7 @@ const saveStore = (store: Store) =>
         return acc;
       }, {} as any);
 
-    yield* fs.writeFileString(EXCHANGE_RATES_FILE, JSON.stringify(sortedStore));
+    yield* fs.writeFileString(INTEREST_RATES_FILE, JSON.stringify(sortedStore));
   });
 
 export const getOrScrape = (date: string) =>
@@ -194,16 +183,6 @@ export const getOrScrape = (date: string) =>
     const existing = Object.values(store).find((data) => {
       const isDateInRange = date >= data.startDate && date <= data.endDate;
       if (!isDateInRange) return false;
-
-      const rangeDuration = (new Date(data.endDate).getTime() - new Date(data.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1;
-
-      // If the date is in the past or present, we want the shortest possible range (usually 7 days)
-      // Long ranges are only acceptable for future dates where short ranges don't exist yet.
-      const today = new Date().toISOString().split('T')[0]!;
-      // Force refresh if the range is long AND (it covers past/present date OR the date we want is past/present)
-      if (rangeDuration > 7 && (today >= data.startDate || date <= today)) {
-        return false;
-      }
 
       return true;
     });
@@ -217,25 +196,8 @@ export const getOrScrape = (date: string) =>
     const data = yield* scrape(date);
 
     const rangeKey = `${data.startDate}_${data.endDate}`;
-    const rangeDuration = (new Date(data.endDate).getTime() - new Date(data.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1;
 
     let updatedStore = { ...store };
-
-    // If we just scraped a 7-day range, and there's a longer range that contains it,
-    // we should remove the longer range as it's now redundant/obsolete.
-    if (rangeDuration <= 7) {
-      for (const [key, existingData] of Object.entries(store)) {
-        if (data.startDate >= existingData.startDate && data.endDate <= existingData.endDate && key !== rangeKey) {
-          const existingDuration =
-            (new Date(existingData.endDate).getTime() - new Date(existingData.startDate).getTime()) / (1000 * 60 * 60 * 24) + 1;
-          if (existingDuration > rangeDuration) {
-            yield* Effect.logInfo(`Removing redundant longer range: ${key}`);
-            delete updatedStore[key];
-          }
-        }
-      }
-    }
-
     updatedStore[rangeKey] = data;
     yield* saveStore(updatedStore);
 
