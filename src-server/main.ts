@@ -18,7 +18,12 @@ const logger = makeLoggerClient();
 const HttpLive = router.pipe(
   HttpServer.serve(),
   HttpServer.withLogAddress,
-  Layer.provide(BunHttpServer.layer({ port: 1730 })),
+  Layer.provide(
+    BunHttpServer.layer({
+      port: 1730,
+      idleTimeout: 0,
+    }),
+  ),
   Layer.provide(BunPath.layer),
   Layer.provide(BunFileSystem.layer),
   Layer.provide(FetchHttpClient.layer),

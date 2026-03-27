@@ -13,7 +13,7 @@ export const exchangeRatesRouter = HttpRouter.empty.pipe(
       const date = normalizeDate(url.searchParams.get('date'));
 
       if (!date) {
-        return yield* HttpServerResponse.json({ error: 'Invalid or missing date parameter (YYYY-MM-DD or Tue, Mar 18, 2025)' }, { status: 400 });
+        return yield* HttpServerResponse.json({ error: 'Invalid or missing date parameter' }, { status: 400 });
       }
 
       const data = yield* scraper.getOrScrape(date);

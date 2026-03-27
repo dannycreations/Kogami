@@ -91,8 +91,26 @@ export const makeScraper = <T extends BaseRateEntry>(type: 'exchange' | 'interes
         return existing as BaseRateData<T>;
       }
 
-      const data = yield* scrape(date);
+      const fallback = Object.values(store).find((data: BaseRateData<T>) => {
+        return date >= data.startDate && date <= data.endDate;
+      }) as BaseRateData<T> | undefined;
+
+      const data = yield* scrape(date).pipe(
+        Effect.catchAll((error) => {
+          if (fallback) {
+            return Effect.logWarning(
+              `Scrape failed for ${date}, falling back to existing range ${fallback.startDate}_${fallback.endDate}: ${error.message}`,
+            ).pipe(Effect.as(fallback));
+          }
+          return Effect.fail(error);
+        }),
+      );
+
       const rangeKey = `${data.startDate}_${data.endDate}`;
+
+      if (fallback && rangeKey === `${fallback.startDate}_${fallback.endDate}`) {
+        return data;
+      }
 
       const updatedStore: Store<BaseRateData<T>> = { ...store };
 
