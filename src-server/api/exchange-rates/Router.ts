@@ -1,7 +1,8 @@
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from '@effect/platform';
+import { normalizeDate } from '@server/utilities/Date';
 import { Effect } from 'effect';
 
-import { getOrScrape, normalizeDate } from './Handler';
+import { scraper } from './Handler';
 
 export const exchangeRatesRouter = HttpRouter.empty.pipe(
   HttpRouter.get(
@@ -15,7 +16,7 @@ export const exchangeRatesRouter = HttpRouter.empty.pipe(
         return yield* HttpServerResponse.json({ error: 'Invalid or missing date parameter (YYYY-MM-DD or Tue, Mar 18, 2025)' }, { status: 400 });
       }
 
-      const data = yield* getOrScrape(date);
+      const data = yield* scraper.getOrScrape(date);
       return yield* HttpServerResponse.json(data);
     }),
   ),

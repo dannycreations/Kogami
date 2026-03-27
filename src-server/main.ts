@@ -27,4 +27,4 @@ const HttpLive = router.pipe(
 
 const program = Layer.launch(HttpLive).pipe(Effect.sandbox, Effect.catchAll(Effect.logError));
 
-Effect.runPromise(program);
+Effect.runPromise(program as Effect.Effect<never, never, never>);

@@ -1,16 +1,51 @@
 import { FetchHttpClient, HttpClient, HttpClientRequest } from '@effect/platform';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Effect } from 'effect';
 import { AlertCircle, Calendar, Download, RefreshCw, Search } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { ExchangeRateData } from '@server/api/exchange-rates/Handler';
+import type { ExchangeRateData, ExchangeRateEntry } from '@server/helpers/Scraper';
+
+const IDR_FORMATTER = new Intl.NumberFormat('id-ID', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: React.CSSProperties }) => {
+  return (
+    <div className="table-row flex items-center w-full" style={style}>
+      <div className="table-cell border-r border-surface-100 p-0 flex items-center justify-center w-16 shrink-0">
+        <div className="inline-flex w-7 h-5 rounded-sm bg-surface-100 items-center justify-center text-[10px] font-bold text-surface-500 border border-surface-200 shadow-sm overflow-hidden">
+          {entry.currency.substring(0, 2)}
+        </div>
+      </div>
+      <div className="table-cell border-r border-surface-100 flex-1 min-w-0">
+        <div className="flex items-center">
+          <span className="font-mono font-bold text-brand-900 bg-brand-50 px-1.5 py-0.5 rounded text-xs border border-brand-100 mr-2">
+            {entry.currency}
+          </span>
+        </div>
+      </div>
+      <div className="table-cell border-r border-surface-100 text-right w-1/3 shrink-0">
+        <span className="font-mono text-[13px] font-medium text-surface-800">{IDR_FORMATTER.format(entry.rate)}</span>
+      </div>
+      <div className="table-cell text-center w-24 shrink-0">
+        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
+          Active
+        </span>
+      </div>
+    </div>
+  );
+});
 
 export const ExchangeRatesView = () => {
-  const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [currency, setCurrency] = useState<string>('');
   const [data, setData] = useState<ExchangeRateData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const parentRef = useRef<HTMLDivElement>(null);
 
   const fetchExchangeRates = useCallback((targetDate: string) => {
     setLoading(true);
@@ -18,8 +53,10 @@ export const ExchangeRatesView = () => {
 
     const program = Effect.gen(function* () {
       const client = yield* HttpClient.HttpClient;
-      const request = HttpClientRequest.get(`http://localhost:1730/exchange-rates?date=${targetDate}`);
-      const response = yield* client.execute(request).pipe(Effect.flatMap((res) => res.json));
+      const response = yield* HttpClientRequest.get(`http://localhost:1730/exchange-rates?date=${targetDate}`).pipe(
+        client.execute,
+        Effect.flatMap((res) => res.json),
+      );
       return response as ExchangeRateData;
     }).pipe(Effect.provide(FetchHttpClient.layer));
 
@@ -35,18 +72,27 @@ export const ExchangeRatesView = () => {
   }, []);
 
   useEffect(() => {
-    if (!date.trim()) {
-      return;
-    }
+    const d = date.trim();
+    if (!d) return;
 
-    const timer = setTimeout(() => {
-      fetchExchangeRates(date);
-    }, 500);
-
+    const timer = setTimeout(() => fetchExchangeRates(d), 500);
     return () => clearTimeout(timer);
   }, [date, fetchExchangeRates]);
 
-  const filteredEntries = data?.entries?.filter((entry) => entry.currency.toLowerCase().includes(currency.toLowerCase())) || [];
+  const filteredEntries = useMemo(() => {
+    const entries = data?.entries;
+    if (!entries) return [];
+    const search = currency.trim().toLowerCase();
+    if (!search) return entries;
+    return entries.filter((entry: any) => entry.currency.toLowerCase().includes(search));
+  }, [data?.entries, currency]);
+
+  const virtualizer = useVirtualizer({
+    count: filteredEntries.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 45,
+    overscan: 10,
+  });
 
   return (
     <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
@@ -135,65 +181,47 @@ export const ExchangeRatesView = () => {
       )}
 
       <div className="table-container flex-1 flex flex-col min-h-0 mt-3.5">
-        <div className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar">
-          <table className="w-full text-left border-collapse relative">
-            <thead className="sticky top-0 z-10 shadow-sm bg-surface-50">
-              <tr className="table-header">
-                <th className="px-4 py-2 w-16 text-center border-r border-surface-200 bg-surface-50">Flag</th>
-                <th className="px-4 py-2 border-r border-surface-200 bg-surface-50">Currency Code</th>
-                <th className="px-4 py-2 border-r border-surface-200 text-right bg-surface-50">Base Rate (IDR)</th>
-                <th className="px-4 py-2 text-center text-surface-400 font-medium bg-surface-50">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-surface-100 bg-white">
+        <div className="flex flex-col w-full text-left border-collapse relative h-full">
+          <div className="sticky top-0 z-20 shadow-sm bg-surface-50 table-header flex w-full">
+            <div className="px-4 py-2 w-16 text-center border-r border-surface-200 bg-surface-50 shrink-0">Flag</div>
+            <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 flex-1">Currency Code</div>
+            <div className="px-4 py-2 border-r border-surface-200 text-right bg-surface-50 w-1/3 shrink-0">Base Rate (IDR)</div>
+            <div className="px-4 py-2 text-center text-surface-400 font-medium bg-surface-50 w-24 shrink-0">Status</div>
+          </div>
+          <div ref={parentRef} className="overflow-x-auto overflow-y-auto flex-1 custom-scrollbar">
+            <div
+              className="bg-white relative w-full"
+              style={{
+                height: `${virtualizer.getTotalSize()}px`,
+              }}
+            >
               {loading ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-16 text-center">
-                    <div className="inline-flex items-center justify-center p-3 rounded-full bg-brand-50 mb-3">
-                      <RefreshCw className="h-5 w-5 text-brand-500 animate-spin" />
-                    </div>
-                    <p className="text-sm font-medium text-surface-600">Querying central database...</p>
-                  </td>
-                </tr>
+                <div className="px-4 py-16 text-center w-full">
+                  <div className="inline-flex items-center justify-center p-3 rounded-full bg-brand-50 mb-3">
+                    <RefreshCw className="h-5 w-5 text-brand-500 animate-spin" />
+                  </div>
+                  <p className="text-sm font-medium text-surface-600">Querying central database...</p>
+                </div>
               ) : filteredEntries.length > 0 ? (
-                filteredEntries.map((entry) => (
-                  <tr key={entry.currency} className="table-row group">
-                    <td className="table-cell border-r border-surface-100 p-0 text-center align-middle">
-                      <div className="mx-auto inline-flex w-7 h-5 rounded-sm bg-surface-100 items-center justify-center text-[10px] font-bold text-surface-500 border border-surface-200 shadow-sm overflow-hidden">
-                        {entry.currency.substring(0, 2)}
-                      </div>
-                    </td>
-                    <td className="table-cell border-r border-surface-100">
-                      <div className="flex items-center">
-                        <span className="font-mono font-bold text-brand-900 bg-brand-50 px-1.5 py-0.5 rounded text-xs border border-brand-100 mr-2 group-hover:bg-white transition-colors">
-                          {entry.currency}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="table-cell border-r border-surface-100 text-right">
-                      <span className="font-mono text-[13px] font-medium text-surface-800">
-                        {new Intl.NumberFormat('id-ID', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        }).format(entry.rate)}
-                      </span>
-                    </td>
-                    <td className="table-cell text-center">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        Active
-                      </span>
-                    </td>
-                  </tr>
+                virtualizer.getVirtualItems().map((virtualRow) => (
+                  <CurrencyRow
+                    key={virtualRow.key}
+                    entry={filteredEntries[virtualRow.index]!}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: `${virtualRow.size}px`,
+                      transform: `translateY(${virtualRow.start}px)`,
+                    }}
+                  />
                 ))
               ) : data ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-12 text-center text-surface-400 text-sm">
-                    No currency matches the search criteria.
-                  </td>
-                </tr>
+                <div className="px-4 py-12 text-center text-surface-400 text-sm w-full">No currency matches the search criteria.</div>
               ) : null}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
         <div className="bg-surface-50 border-t border-surface-200 px-4 py-2 text-[10px] text-surface-500 flex justify-between items-center font-mono">

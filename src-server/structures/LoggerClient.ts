@@ -86,7 +86,7 @@ export const makeLoggerClient = (options: LoggerOptions = {}): pino.Logger => {
   const instance = pino(
     {
       level,
-      base: undefined,
+      base: null,
       nestedKey: 'payload',
       hooks: {
         logMethod(args, method) {
