@@ -6,30 +6,20 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { FilterBar, ViewHeader, VirtualTable } from './shared/DataView';
 
-import type { ExchangeRateData, ExchangeRateEntry } from '@server/helpers/Scraper';
+import type { InterestRateData, InterestRateEntry } from '@server/helpers/Scraper';
 
-const IDR_FORMATTER = new Intl.NumberFormat('id-ID', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
-
-const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: React.CSSProperties }) => {
+const RateRow = memo(({ entry, style }: { entry: InterestRateEntry; style?: React.CSSProperties }) => {
   return (
     <div className="v-row flex items-stretch w-full" style={style}>
-      <div className="v-cell border-r border-surface-100 p-0 flex items-center justify-center w-16 shrink-0">
-        <div className="inline-flex w-7 h-5 rounded-sm bg-surface-100 items-center justify-center text-[10px] font-bold text-surface-500 border border-surface-200 shadow-sm overflow-hidden">
-          {entry.currency.substring(0, 2)}
-        </div>
-      </div>
       <div className="v-cell border-r border-surface-100 flex-1 min-w-0 flex items-center">
-        <div className="flex items-center">
-          <span className="font-mono font-bold text-brand-900 bg-brand-50 px-1.5 py-0.5 rounded text-xs border border-brand-100 mr-2">
-            {entry.currency}
-          </span>
+        <div className="flex flex-col">
+          <span className="text-sm font-medium text-surface-900 leading-snug">{entry.tags}</span>
         </div>
       </div>
-      <div className="v-cell border-r border-surface-100 text-right w-1/3 shrink-0 flex items-center justify-end">
-        <span className="font-mono text-[13px] font-medium text-surface-800">{IDR_FORMATTER.format(entry.rate)}</span>
+      <div className="v-cell border-r border-surface-100 text-right w-32 shrink-0 flex items-center justify-end">
+        <span className="font-mono text-[13px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100">
+          {entry.rate.toFixed(2)}%
+        </span>
       </div>
       <div className="v-cell text-center w-24 shrink-0 flex items-center justify-center">
         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -40,26 +30,26 @@ const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: 
   );
 });
 
-export const ExchangeRatesView = () => {
+export const InterestRatesView = () => {
   const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
-  const [currency, setCurrency] = useState<string>('');
-  const [data, setData] = useState<ExchangeRateData | null>(null);
+  const [search, setSearch] = useState<string>('');
+  const [data, setData] = useState<InterestRateData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const fetchExchangeRates = useCallback((targetDate: string) => {
+  const fetchInterestRates = useCallback((targetDate: string) => {
     setLoading(true);
     setError(null);
 
     const program = Effect.gen(function* () {
       const client = yield* HttpClient.HttpClient;
-      const response = yield* HttpClientRequest.get(`http://localhost:1730/exchange-rates?date=${targetDate}`).pipe(
+      const response = yield* HttpClientRequest.get(`http://localhost:1730/interest-rates?date=${targetDate}`).pipe(
         client.execute,
         Effect.flatMap((res) => res.json),
       );
-      return response as ExchangeRateData;
+      return response as InterestRateData;
     }).pipe(Effect.provide(FetchHttpClient.layer));
 
     Effect.runPromise(program)
@@ -77,36 +67,36 @@ export const ExchangeRatesView = () => {
     const d = date.trim();
     if (!d) return;
 
-    const timer = setTimeout(() => fetchExchangeRates(d), 500);
+    const timer = setTimeout(() => fetchInterestRates(d), 500);
     return () => clearTimeout(timer);
-  }, [date, fetchExchangeRates]);
+  }, [date, fetchInterestRates]);
 
   const filteredEntries = useMemo(() => {
     const entries = data?.entries;
     if (!entries) return [];
-    const search = currency.trim().toLowerCase();
-    if (!search) return entries;
-    return entries.filter((entry: any) => entry.currency.toLowerCase().includes(search));
-  }, [data?.entries, currency]);
+    const query = search.trim().toLowerCase();
+    if (!query) return entries;
+    return entries.filter((entry: InterestRateEntry) => entry.tags.toLowerCase().includes(query));
+  }, [data?.entries, search]);
 
   const virtualizer = useVirtualizer({
     count: filteredEntries.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 45,
+    estimateSize: () => 60,
     overscan: 10,
   });
 
   return (
     <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
-      <ViewHeader title="Exchange Rates Matrix" subtitle="KMK Weekly Exchange Rates" onSync={() => fetchExchangeRates(date)} loading={loading} />
+      <ViewHeader title="Interest Rates Matrix" subtitle="KMK Monthly Interest Rates" onSync={() => fetchInterestRates(date)} loading={loading} />
 
       <FilterBar
         date={date}
         onDateChange={setDate}
-        search={currency}
-        onSearchChange={setCurrency}
-        searchLabel="Currency Find"
-        searchPlaceholder="Ex. USD, EUR"
+        search={search}
+        onSearchChange={setSearch}
+        searchLabel="Search Tags"
+        searchPlaceholder="Ex. Pasal 19, Pasal 8"
         isValid={!!data && !loading}
         period={data ? { startDate: data.startDate, endDate: data.endDate } : undefined}
       />
@@ -129,12 +119,9 @@ export const ExchangeRatesView = () => {
         hasData={!!data}
         headers={
           <>
-            <div className="px-4 py-2.5 w-16 text-center border-r border-surface-200 bg-surface-50 shrink-0 flex items-center justify-center">
-              Flag
-            </div>
-            <div className="px-4 py-2.5 border-r border-surface-200 bg-surface-50 flex-1 flex items-center">Currency Code</div>
-            <div className="px-4 py-2.5 border-r border-surface-200 text-right bg-surface-50 w-1/3 shrink-0 flex items-center justify-end">
-              Base Rate (IDR)
+            <div className="px-4 py-2.5 border-r border-surface-200 bg-surface-50 flex-1 flex items-center">Legal Reference (Tags)</div>
+            <div className="px-4 py-2.5 border-r border-surface-200 text-right bg-surface-50 w-32 shrink-0 flex items-center justify-end">
+              Rate / Month
             </div>
             <div className="px-4 py-2.5 text-center text-surface-400 font-medium bg-surface-50 w-24 shrink-0 flex items-center justify-center">
               Status
@@ -144,7 +131,7 @@ export const ExchangeRatesView = () => {
         renderRow={(index) => {
           const virtualRow = virtualizer.getVirtualItems()[index]!;
           return (
-            <CurrencyRow
+            <RateRow
               key={virtualRow.key}
               entry={filteredEntries[virtualRow.index]!}
               style={{
@@ -160,7 +147,7 @@ export const ExchangeRatesView = () => {
         }}
         footer={
           <>
-            <span>Total Entries: {filteredEntries.length}</span>
+            <span>Total Rules: {filteredEntries.length}</span>
             <span>Data Source: Ministry of Finance RI</span>
           </>
         }

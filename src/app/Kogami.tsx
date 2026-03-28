@@ -1,14 +1,27 @@
 import './styles.css';
 
-import { BookMarked, Calculator, Clock, DownloadCloud, FileSpreadsheet, FileText, Fingerprint, LayoutDashboard, Settings } from 'lucide-react';
+import {
+  Banknote,
+  BookMarked,
+  Calculator,
+  Clock,
+  DownloadCloud,
+  FileSpreadsheet,
+  FileText,
+  Fingerprint,
+  LayoutDashboard,
+  Settings,
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { ExchangeRatesView } from '../components/ExchangeRatesView';
+import { InterestRatesView } from '../components/InterestRatesView';
 
 const NAV_LIST = [
   { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
   { id: 'transactions', name: 'Transactions', icon: FileSpreadsheet },
   { id: 'exchange-rates', name: 'Exchange Rates', icon: Calculator },
+  { id: 'interest-rates', name: 'Interest Rates', icon: Banknote },
   { id: 'reports', name: 'Tax Reports', icon: FileText },
   { id: 'export', name: 'Data Export', icon: DownloadCloud },
   { id: 'audit', name: 'Audit Log', icon: Clock },
@@ -82,11 +95,13 @@ export const KogamiApp = () => {
         <div className="flex-1 p-6 w-full">
           {activeTab === 'exchange-rates' ? (
             <ExchangeRatesView />
+          ) : activeTab === 'interest-rates' ? (
+            <InterestRatesView />
           ) : (
             <div className="h-64 flex flex-col items-center justify-center bg-white rounded border border-dashed border-surface-300 text-surface-500">
               <FileSpreadsheet className="h-8 w-8 text-surface-300 mb-3" strokeWidth={1} />
               <p className="text-sm font-medium">Module not configured</p>
-              <p className="text-xs text-surface-400 mt-1">Select Exchange Rates to proceed with tax calculation.</p>
+              <p className="text-xs text-surface-400 mt-1">Select tool from sidebar to proceed.</p>
             </div>
           )}
         </div>
