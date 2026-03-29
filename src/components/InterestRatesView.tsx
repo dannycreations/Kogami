@@ -4,7 +4,7 @@ import { Effect } from 'effect';
 import { AlertCircle } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { FilterBar, ViewHeader, VirtualTable } from './shared/DataView';
+import { FilterBar, VirtualTable } from './shared/DataView';
 
 import type { InterestRateData, InterestRateEntry } from '@server/helpers/Scraper';
 
@@ -88,8 +88,6 @@ export const InterestRatesView = () => {
 
   return (
     <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
-      <ViewHeader title="Interest Rates Matrix" subtitle="KMK Monthly Interest Rates" onSync={() => fetchInterestRates(date)} loading={loading} />
-
       <FilterBar
         date={date}
         onDateChange={setDate}

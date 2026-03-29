@@ -1,21 +1,6 @@
 import { Calendar, RefreshCw } from 'lucide-react';
 import { memo } from 'react';
 
-export const ViewHeader = memo(({ title, subtitle, onSync, loading }: { title: string; subtitle: string; onSync: () => void; loading: boolean }) => (
-  <div className="flex items-end justify-between">
-    <div>
-      <h2 className="text-xl font-bold tracking-tight text-surface-900">{title}</h2>
-      <p className="text-xs text-surface-500 mt-0.5">{subtitle}</p>
-    </div>
-    <div className="flex items-center space-x-2">
-      <button onClick={onSync} className="compact-button bg-white text-surface-700 border border-surface-200 hover:bg-surface-50" disabled={loading}>
-        <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${loading ? 'animate-spin text-brand-500' : 'text-surface-500'}`} />
-        <span>Sync</span>
-      </button>
-    </div>
-  </div>
-));
-
 export const FilterBar = memo(
   ({
     date,

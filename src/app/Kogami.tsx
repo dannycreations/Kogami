@@ -1,9 +1,12 @@
 import './styles.css';
 
 import {
+  ArrowRightLeft,
   Banknote,
   BookMarked,
   Calculator,
+  ChevronDown,
+  ChevronRight,
   Clock,
   DownloadCloud,
   FileSpreadsheet,
@@ -11,6 +14,7 @@ import {
   Fingerprint,
   LayoutDashboard,
   Settings,
+  TrendingUp,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -21,16 +25,22 @@ import { TaxReportsView } from '../components/TaxReportsView';
 
 const NAV_LIST = [
   { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
-  { id: 'investment', name: 'Investments', icon: FileSpreadsheet },
-  { id: 'exchange-rates', name: 'Exchange Rates', icon: Calculator },
-  { id: 'interest-rates', name: 'Interest Rates', icon: Banknote },
+  { id: 'transactions', name: 'Transactions', icon: ArrowRightLeft, isCategory: true },
+  { id: 'investment', name: 'Investments', icon: FileSpreadsheet, parentId: 'transactions' },
+  { id: 'rates', name: 'Rates', icon: TrendingUp, isCategory: true },
+  { id: 'exchange-rates', name: 'Exchange Rates', icon: Calculator, parentId: 'rates' },
+  { id: 'interest-rates', name: 'Interest Rates', icon: Banknote, parentId: 'rates' },
   { id: 'reports', name: 'Tax Reports', icon: FileText },
   { id: 'export', name: 'Data Export', icon: DownloadCloud },
   { id: 'audit', name: 'Audit Log', icon: Clock },
 ] as const;
-
 export const KogamiApp = () => {
   const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id']>('investment');
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+
+  const toggleCategory = (id: string) => {
+    setExpandedCategories((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+  };
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex text-surface-900 font-sans">
@@ -42,7 +52,7 @@ export const KogamiApp = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight text-surface-900 leading-tight">Kogami</span>
-              <span className="text-[10px] uppercase tracking-wider text-surface-500 font-semibold">Workspace</span>
+              <span className="text-[10px] uppercase tracking-wider text-surface-500 font-semibold">Financial Management</span>
             </div>
           </div>
         </div>
@@ -51,23 +61,45 @@ export const KogamiApp = () => {
           <div className="px-3 mb-2">
             <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-surface-400 mb-2">Tools</p>
             <nav className="space-y-0.5">
-              {NAV_LIST.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm group ${
-                    activeTab === item.id
-                      ? 'bg-brand-100 text-brand-900 font-medium shadow-sm'
-                      : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
-                  }`}
-                >
-                  <item.icon
-                    className={`h-4 w-4 ${activeTab === item.id ? 'text-brand-700' : 'text-surface-400 group-hover:text-surface-600'}`}
-                    strokeWidth={activeTab === item.id ? 2 : 1.5}
-                  />
-                  <span>{item.name}</span>
-                </button>
-              ))}
+              {NAV_LIST.map((item) => {
+                const isCategory = 'isCategory' in item && (item as any).isCategory;
+                const parentId = 'parentId' in item ? (item as any).parentId : undefined;
+                const isExpanded = isCategory ? expandedCategories.includes(item.id) : true;
+                const isVisible = !parentId || expandedCategories.includes(parentId);
+
+                if (!isVisible) return null;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      if (isCategory) {
+                        toggleCategory(item.id);
+                      } else {
+                        setActiveTab(item.id);
+                      }
+                    }}
+                    className={`w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm group ${
+                      parentId ? 'ml-4 w-[calc(100%-1rem)]' : ''
+                    } ${
+                      activeTab === item.id
+                        ? 'bg-brand-100 text-brand-900 font-medium shadow-sm'
+                        : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                    }`}
+                  >
+                    <item.icon
+                      className={`h-4 w-4 ${activeTab === item.id ? 'text-brand-700' : 'text-surface-400 group-hover:text-surface-600'}`}
+                      strokeWidth={activeTab === item.id ? 2 : 1.5}
+                    />
+                    <span className="flex-1 text-left">{item.name}</span>
+                    {isCategory && (
+                      <span className="text-surface-400 group-hover:text-surface-600">
+                        {isExpanded ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
