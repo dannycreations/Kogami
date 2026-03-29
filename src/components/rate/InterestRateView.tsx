@@ -4,7 +4,7 @@ import { Effect } from 'effect';
 import { AlertCircle } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { FilterBar, VirtualTable } from './shared/DataView';
+import { FilterBar, VirtualTable } from '../shared/DataView';
 
 import type { InterestRateData, InterestRateEntry } from '@server/helpers/Scraper';
 
@@ -30,7 +30,7 @@ const RateRow = memo(({ entry, style }: { entry: InterestRateEntry; style?: Reac
   );
 });
 
-export const InterestRatesView = () => {
+export const InterestRateView = () => {
   const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [search, setSearch] = useState<string>('');
   const [data, setData] = useState<InterestRateData | null>(null);

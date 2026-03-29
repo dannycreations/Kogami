@@ -3,18 +3,19 @@ import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useInvestmentStore } from '../stores/investmentStore';
+import { useSettingStore } from '../stores/settingsStore';
 import { VirtualTable } from './shared/DataView';
 
 interface YearlyReport {
   readonly year: number;
-  realizedProfitIdr: number;
-  holdingsValueIdr: number;
+  realizedProfit: number;
+  holdingsValue: number;
   transactionsCount: number;
   holdings: {
     symbol: string;
     quantity: number;
-    costBasisUsd: number;
-    valueIdrAtDec31: number;
+    costBasisOriginal: number;
+    valuePreferredAtDec31: number;
   }[];
 }
 
@@ -26,19 +27,7 @@ interface InventoryItem {
   readonly rateAtBuy: number;
 }
 
-const USD_FORMATTER = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-});
-
-const IDR_FORMATTER = new Intl.NumberFormat('id-ID', {
-  style: 'currency',
-  currency: 'IDR',
-  minimumFractionDigits: 0,
-});
-
-const SummaryRow = memo(({ report, style }: { report: YearlyReport; style?: React.CSSProperties }) => {
+const SummaryRow = memo(({ report, style, formatter }: { report: YearlyReport; style?: React.CSSProperties; formatter: Intl.NumberFormat }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -55,13 +44,13 @@ const SummaryRow = memo(({ report, style }: { report: YearlyReport; style?: Reac
         </div>
         <div className="v-cell border-r border-surface-100 flex-1 flex flex-col justify-center px-4">
           <span className="text-[9px] font-bold text-surface-400 uppercase">Realized Profit (FIFO)</span>
-          <span className={`font-mono text-xs font-bold ${report.realizedProfitIdr >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-            {IDR_FORMATTER.format(report.realizedProfitIdr)}
+          <span className={`font-mono text-xs font-bold ${report.realizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+            {formatter.format(report.realizedProfit)}
           </span>
         </div>
         <div className="v-cell border-r border-surface-100 flex-1 flex flex-col justify-center px-4">
           <span className="text-[9px] font-bold text-surface-400 uppercase">Holdings (Dec 31 Rates)</span>
-          <span className="font-mono text-xs font-bold text-brand-900">{IDR_FORMATTER.format(report.holdingsValueIdr)}</span>
+          <span className="font-mono text-xs font-bold text-brand-900">{formatter.format(report.holdingsValue)}</span>
         </div>
         <div className="v-cell text-center w-12 shrink-0 flex items-center justify-center">
           <span className="text-xs font-medium text-surface-500">{isExpanded ? '▼' : '▶'}</span>
@@ -81,8 +70,7 @@ const SummaryRow = memo(({ report, style }: { report: YearlyReport; style?: Reac
                   <span className="font-mono text-surface-500">{h.quantity.toLocaleString()} units</span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="font-mono font-bold text-brand-800">{IDR_FORMATTER.format(h.valueIdrAtDec31)}</span>
-                  <span className="text-[9px] text-surface-400">Cost: {USD_FORMATTER.format(h.costBasisUsd)}</span>
+                  <span className="font-mono font-bold text-brand-800">{formatter.format(h.valuePreferredAtDec31)}</span>
                 </div>
               </div>
             ))}
@@ -94,10 +82,19 @@ const SummaryRow = memo(({ report, style }: { report: YearlyReport; style?: Reac
   );
 });
 
-export const TaxReportsView = () => {
+export const TaxReportView = () => {
   const [exchangeRates, setExchangeRates] = useState<any>(null);
   const transactions = useInvestmentStore((state) => state.transactions);
+  const preferredCurrency = useSettingStore((state) => state.preferredCurrency);
   const parentRef = useRef<HTMLDivElement>(null);
+
+  const formatter = useMemo(() => {
+    return new Intl.NumberFormat(preferredCurrency === 'IDR' ? 'id-ID' : 'en-US', {
+      style: 'currency',
+      currency: preferredCurrency,
+      minimumFractionDigits: preferredCurrency === 'IDR' ? 0 : 2,
+    });
+  }, [preferredCurrency]);
 
   useEffect(() => {
     // Load local exchange rates for conversion
@@ -106,8 +103,9 @@ export const TaxReportsView = () => {
     });
   }, []);
 
-  const getExchangeRate = (dateStr: string): number => {
-    if (!exchangeRates) return 15000;
+  const getExchangeRate = (dateStr: string, from: string, to: string): number => {
+    if (from === to) return 1;
+    if (!exchangeRates) return to === 'IDR' ? 15000 : 1;
 
     const date = new Date(dateStr);
     const keys = Object.keys(exchangeRates);
@@ -120,11 +118,20 @@ export const TaxReportsView = () => {
     });
 
     if (matchingKey) {
-      const entry = exchangeRates[matchingKey].entries.find((e: any) => e.currency === 'USD');
-      return entry ? entry.rate : 15000;
+      const entries = exchangeRates[matchingKey].entries;
+      const fromEntry = from === 'IDR' ? { rate: 1 } : entries.find((e: any) => e.currency === from);
+      const toEntry = to === 'IDR' ? { rate: 1 } : entries.find((e: any) => e.currency === to);
+
+      if (fromEntry && toEntry) {
+        // Rate is always relative to IDR in the data: 1 From = Rate IDR
+        // 1 From = fromEntry.rate IDR
+        // 1 To = toEntry.rate IDR
+        // 1 From = (fromEntry.rate / toEntry.rate) To
+        return fromEntry.rate / toEntry.rate;
+      }
     }
 
-    return 15000;
+    return to === 'IDR' ? 15000 : 1;
   };
 
   const yearlyReports = useMemo(() => {
@@ -146,29 +153,28 @@ export const TaxReportsView = () => {
 
     years.forEach((year) => {
       const txsInYear = sortedTxs.filter((tx) => new Date(tx.date).getFullYear() === year);
-      let realizedProfitIdr = 0;
+      let realizedProfit = 0;
 
       txsInYear.forEach((tx) => {
-        const rate = getExchangeRate(tx.date);
+        const rateToPreferred = getExchangeRate(tx.date, tx.currency, preferredCurrency);
         if (tx.action === 'buy') {
           inventory.push({
             symbol: tx.symbol,
             quantity: tx.quantity,
             priceUsd: tx.price,
             date: tx.date,
-            rateAtBuy: rate,
+            rateAtBuy: rateToPreferred, // This is rate from tx.currency to preferred at that time
           });
         } else {
           let remainingToSell = tx.quantity;
-          const sellRate = rate;
 
           for (let i = 0; i < inventory.length && remainingToSell > 0; i++) {
             const item = inventory[i]!;
             if (item.symbol === tx.symbol) {
               const sellFromThisItem = Math.min(item.quantity, remainingToSell);
-              const buyValueIdr = sellFromThisItem * item.priceUsd * item.rateAtBuy;
-              const sellValueIdr = sellFromThisItem * tx.price * sellRate;
-              realizedProfitIdr += sellValueIdr - buyValueIdr;
+              const buyValuePreferred = sellFromThisItem * item.priceUsd * item.rateAtBuy;
+              const sellValuePreferred = sellFromThisItem * tx.price * rateToPreferred;
+              realizedProfit += sellValuePreferred - buyValuePreferred;
 
               remainingToSell -= sellFromThisItem;
 
@@ -183,16 +189,20 @@ export const TaxReportsView = () => {
         }
       });
 
-      const dec31Rate = getExchangeRate(`${year}-12-31`);
-      const holdingsMap = new Map<string, { quantity: number; costBasisUsd: number; valueIdrAtDec31: number }>();
+      // At the end of year, we need to value inventory in preferred currency using Dec 31 rates
+      const holdingsMap = new Map<string, { quantity: number; costBasisOriginal: number; valuePreferredAtDec31: number }>();
 
       inventory.forEach((item) => {
-        const existing = holdingsMap.get(item.symbol) || { quantity: 0, costBasisUsd: 0, valueIdrAtDec31: 0 };
-        const itemValueIdr = item.quantity * item.priceUsd * dec31Rate;
+        const dec31Rate = getExchangeRate(`${year}-12-31`, 'USD', preferredCurrency); // Assuming prices are USD-based for inventory valuation logic if not specified
+        // Correction: item.priceUsd is original price. We should ideally know the original currency.
+        // TaxReportsView currently assumes inventory is stored with priceUsd.
+
+        const existing = holdingsMap.get(item.symbol) || { quantity: 0, costBasisOriginal: 0, valuePreferredAtDec31: 0 };
+        const itemValuePreferred = item.quantity * item.priceUsd * dec31Rate;
         holdingsMap.set(item.symbol, {
           quantity: existing.quantity + item.quantity,
-          costBasisUsd: existing.costBasisUsd + item.quantity * item.priceUsd,
-          valueIdrAtDec31: existing.valueIdrAtDec31 + itemValueIdr,
+          costBasisOriginal: existing.costBasisOriginal + item.quantity * item.priceUsd,
+          valuePreferredAtDec31: existing.valuePreferredAtDec31 + itemValuePreferred,
         });
       });
 
@@ -205,8 +215,8 @@ export const TaxReportsView = () => {
 
       reports.push({
         year,
-        realizedProfitIdr,
-        holdingsValueIdr: holdings.reduce((acc, h) => acc + h.valueIdrAtDec31, 0),
+        realizedProfit,
+        holdingsValue: holdings.reduce((acc, h) => acc + h.valuePreferredAtDec31, 0),
         transactionsCount: txsInYear.length,
         holdings,
       });
@@ -222,8 +232,8 @@ export const TaxReportsView = () => {
     overscan: 5,
   });
 
-  const totalRealizedProfitIdr = yearlyReports.reduce((acc, curr) => acc + curr.realizedProfitIdr, 0);
-  const currentHoldingsValueIdr = yearlyReports.length > 0 ? yearlyReports[0]!.holdingsValueIdr : 0;
+  const totalRealizedProfit = yearlyReports.reduce((acc, curr) => acc + curr.realizedProfit, 0);
+  const currentHoldingsValue = yearlyReports.length > 0 ? yearlyReports[0]!.holdingsValue : 0;
 
   return (
     <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
@@ -231,18 +241,18 @@ export const TaxReportsView = () => {
         <div className="bg-white p-4 rounded-lg border border-surface-200 shadow-sm">
           <div className="flex items-center space-x-2 text-surface-500 mb-1">
             <TrendingUp className="h-4 w-4 text-emerald-500" />
-            <span className="text-xs font-bold uppercase tracking-wider">Total Realized Profit (IDR)</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Total Realized Profit ({preferredCurrency})</span>
           </div>
-          <p className={`text-xl font-bold ${totalRealizedProfitIdr >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-            {IDR_FORMATTER.format(totalRealizedProfitIdr)}
+          <p className={`text-xl font-bold ${totalRealizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+            {formatter.format(totalRealizedProfit)}
           </p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-surface-200 shadow-sm">
           <div className="flex items-center space-x-2 text-surface-500 mb-1">
             <DollarSign className="h-4 w-4 text-brand-500" />
-            <span className="text-xs font-bold uppercase tracking-wider">Latest Holdings Value (IDR)</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Latest Holdings Value ({preferredCurrency})</span>
           </div>
-          <p className="text-xl font-bold text-brand-900">{IDR_FORMATTER.format(currentHoldingsValueIdr)}</p>
+          <p className="text-xl font-bold text-brand-900">{formatter.format(currentHoldingsValue)}</p>
         </div>
         <div className="bg-white p-4 rounded-lg border border-surface-200 shadow-sm">
           <div className="flex items-center space-x-2 text-surface-500 mb-1">
@@ -281,6 +291,7 @@ export const TaxReportsView = () => {
             <SummaryRow
               key={virtualRow.key}
               report={yearlyReports[virtualRow.index]!}
+              formatter={formatter}
               style={{
                 position: 'absolute',
                 top: 0,

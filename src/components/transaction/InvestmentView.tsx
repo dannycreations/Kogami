@@ -2,10 +2,11 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Download, FileText, Plus, Trash2, X } from 'lucide-react';
 import { memo, useCallback, useRef, useState } from 'react';
 
-import { useInvestmentStore } from '../stores/investmentStore';
-import { VirtualTable } from './shared/DataView';
+import { useInvestmentStore } from '../../stores/investmentStore';
+import { useSettingStore } from '../../stores/settingsStore';
+import { VirtualTable } from '../shared/DataView';
 
-import type { InvestmentTransaction } from '../stores/investmentStore';
+import type { InvestmentTransaction } from '../../stores/investmentStore';
 
 const EditableRow = memo(
   ({
@@ -221,6 +222,8 @@ export const InvestmentView = () => {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const parentRef = useRef<HTMLDivElement>(null);
 
+  const preferredCurrency = useSettingStore((state) => state.preferredCurrency);
+
   const addRow = useCallback(() => {
     addTransaction({
       id: Math.random().toString(36).substring(2, 9),
@@ -229,9 +232,9 @@ export const InvestmentView = () => {
       symbol: '',
       quantity: 0,
       price: 0,
-      currency: 'USD',
+      currency: preferredCurrency,
     });
-  }, [addTransaction]);
+  }, [addTransaction, preferredCurrency]);
 
   const virtualizer = useVirtualizer({
     count: transactions.length,

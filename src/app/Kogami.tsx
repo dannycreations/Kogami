@@ -3,12 +3,9 @@ import './styles.css';
 import {
   ArrowRightLeft,
   Banknote,
-  BookMarked,
   Calculator,
   ChevronDown,
   ChevronRight,
-  Clock,
-  DownloadCloud,
   FileSpreadsheet,
   FileText,
   Fingerprint,
@@ -18,10 +15,11 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-import { ExchangeRatesView } from '../components/ExchangeRatesView';
-import { InterestRatesView } from '../components/InterestRatesView';
-import { InvestmentView } from '../components/InvestmentView';
-import { TaxReportsView } from '../components/TaxReportsView';
+import { ExchangeRateView } from '../components/rate/ExchangeRateView';
+import { InterestRateView } from '../components/rate/InterestRateView';
+import { SettingView } from '../components/SettingView';
+import { TaxReportView } from '../components/TaxReportView';
+import { InvestmentView } from '../components/transaction/InvestmentView';
 
 const NAV_LIST = [
   { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
@@ -31,11 +29,10 @@ const NAV_LIST = [
   { id: 'exchange-rates', name: 'Exchange Rates', icon: Calculator, parentId: 'rates' },
   { id: 'interest-rates', name: 'Interest Rates', icon: Banknote, parentId: 'rates' },
   { id: 'reports', name: 'Tax Reports', icon: FileText },
-  { id: 'export', name: 'Data Export', icon: DownloadCloud },
-  { id: 'audit', name: 'Audit Log', icon: Clock },
+  { id: 'settings', name: 'Settings', icon: Settings },
 ] as const;
 export const KogamiApp = () => {
-  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id']>('investment');
+  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id'] | 'settings'>('investment');
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   const toggleCategory = (id: string) => {
@@ -59,7 +56,6 @@ export const KogamiApp = () => {
 
         <div className="flex-1 py-4 overflow-y-auto">
           <div className="px-3 mb-2">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-surface-400 mb-2">Tools</p>
             <nav className="space-y-0.5">
               {NAV_LIST.map((item) => {
                 const isCategory = 'isCategory' in item && (item as any).isCategory;
@@ -102,20 +98,6 @@ export const KogamiApp = () => {
               })}
             </nav>
           </div>
-
-          <div className="px-3 mt-6">
-            <p className="px-2 text-[10px] font-bold uppercase tracking-wider text-surface-400 mb-2">System</p>
-            <nav className="space-y-0.5">
-              <button className="w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm text-surface-600 hover:bg-surface-100 hover:text-surface-900 group">
-                <BookMarked className="h-4 w-4 text-surface-400 group-hover:text-surface-600" strokeWidth={1.5} />
-                <span>Documentation</span>
-              </button>
-              <button className="w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm text-surface-600 hover:bg-surface-100 hover:text-surface-900 group">
-                <Settings className="h-4 w-4 text-surface-400 group-hover:text-surface-600" strokeWidth={1.5} />
-                <span>Settings</span>
-              </button>
-            </nav>
-          </div>
         </div>
       </aside>
 
@@ -128,13 +110,15 @@ export const KogamiApp = () => {
 
         <div className="flex-1 p-6 w-full">
           {activeTab === 'exchange-rates' ? (
-            <ExchangeRatesView />
+            <ExchangeRateView />
           ) : activeTab === 'interest-rates' ? (
-            <InterestRatesView />
+            <InterestRateView />
           ) : activeTab === 'investment' ? (
             <InvestmentView />
           ) : activeTab === 'reports' ? (
-            <TaxReportsView />
+            <TaxReportView />
+          ) : activeTab === 'settings' ? (
+            <SettingView />
           ) : (
             <div className="h-64 flex flex-col items-center justify-center bg-white rounded border border-dashed border-surface-300 text-surface-500">
               <FileSpreadsheet className="h-8 w-8 text-surface-300 mb-3" strokeWidth={1} />

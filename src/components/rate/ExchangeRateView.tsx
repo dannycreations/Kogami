@@ -4,7 +4,7 @@ import { Effect } from 'effect';
 import { AlertCircle } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { FilterBar, VirtualTable } from './shared/DataView';
+import { FilterBar, VirtualTable } from '../shared/DataView';
 
 import type { ExchangeRateData, ExchangeRateEntry } from '@server/helpers/Scraper';
 
@@ -40,7 +40,7 @@ const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: 
   );
 });
 
-export const ExchangeRatesView = () => {
+export const ExchangeRateView = () => {
   const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [currency, setCurrency] = useState<string>('');
   const [data, setData] = useState<ExchangeRateData | null>(null);
