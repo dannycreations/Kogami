@@ -86,7 +86,7 @@ export const ExchangeRateView = () => {
     if (!entries) return [];
     const search = currency.trim().toLowerCase();
     if (!search) return entries;
-    return entries.filter((entry: any) => entry.currency.toLowerCase().includes(search));
+    return entries.filter((entry) => entry.currency.toLowerCase().includes(search));
   }, [data?.entries, currency]);
 
   const virtualizer = useVirtualizer({

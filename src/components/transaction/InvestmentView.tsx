@@ -2,10 +2,12 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Download, FileText, Plus, Trash2, X } from 'lucide-react';
 import { memo, useCallback, useRef, useState } from 'react';
 
+import { CURRENCIES } from '../../app/constants';
 import { useInvestmentStore } from '../../stores/investmentStore';
 import { useSettingStore } from '../../stores/settingsStore';
 import { VirtualTable } from '../shared/DataView';
 
+import type { CurrencyCode } from '../../app/constants';
 import type { InvestmentTransaction } from '../../stores/investmentStore';
 
 const EditableRow = memo(
@@ -61,15 +63,14 @@ const EditableRow = memo(
         <div className="v-cell border-r border-surface-100 p-0 w-24 shrink-0 flex items-center justify-center bg-white">
           <select
             value={transaction.currency}
-            onChange={(e) => onUpdate(transaction.id, { currency: e.target.value })}
+            onChange={(e) => onUpdate(transaction.id, { currency: e.target.value as CurrencyCode })}
             className="w-full mx-1 h-7 px-0.5 text-surface-900 text-[9px] font-mono font-bold cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto"
           >
-            <option value="USD">USD</option>
-            <option value="IDR">IDR</option>
-            <option value="EUR">EUR</option>
-            <option value="GBP">GBP</option>
-            <option value="JPY">JPY</option>
-            <option value="SGD">SGD</option>
+            {CURRENCIES.map((currency) => (
+              <option key={currency.code} value={currency.code}>
+                {currency.code}
+              </option>
+            ))}
           </select>
         </div>
         <div className="v-cell border-r border-surface-100 p-0 flex-1 flex items-center min-w-[120px]">
@@ -148,7 +149,7 @@ const BulkImportModal = memo(({ isOpen, onClose }: { isOpen: boolean; onClose: (
           action: action.toLowerCase() as 'buy' | 'sell',
           symbol: symbol || '',
           quantity: parsedQuantity,
-          currency: currency || 'USD',
+          currency: (currency as CurrencyCode) || 'USD',
           price: parsedPrice,
         };
       });

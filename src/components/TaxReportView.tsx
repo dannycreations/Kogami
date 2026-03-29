@@ -2,6 +2,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
 
+import { DEFAULT_CURRENCY } from '../app/constants';
 import { useInvestmentStore } from '../stores/investmentStore';
 import { useSettingStore } from '../stores/settingsStore';
 import { VirtualTable } from './shared/DataView';
@@ -83,16 +84,19 @@ const SummaryRow = memo(({ report, style, formatter }: { report: YearlyReport; s
 });
 
 export const TaxReportView = () => {
-  const [exchangeRates, setExchangeRates] = useState<any>(null);
+  const [exchangeRates, setExchangeRates] = useState<Record<
+    string,
+    { startDate: string; endDate: string; entries: { currency: string; rate: number }[] }
+  > | null>(null);
   const transactions = useInvestmentStore((state) => state.transactions);
   const preferredCurrency = useSettingStore((state) => state.preferredCurrency);
   const parentRef = useRef<HTMLDivElement>(null);
 
   const formatter = useMemo(() => {
-    return new Intl.NumberFormat(preferredCurrency === 'IDR' ? 'id-ID' : 'en-US', {
+    return new Intl.NumberFormat(preferredCurrency === DEFAULT_CURRENCY ? 'id-ID' : 'en-US', {
       style: 'currency',
       currency: preferredCurrency,
-      minimumFractionDigits: preferredCurrency === 'IDR' ? 0 : 2,
+      minimumFractionDigits: preferredCurrency === DEFAULT_CURRENCY ? 0 : 2,
     });
   }, [preferredCurrency]);
 
@@ -105,7 +109,7 @@ export const TaxReportView = () => {
 
   const getExchangeRate = (dateStr: string, from: string, to: string): number => {
     if (from === to) return 1;
-    if (!exchangeRates) return to === 'IDR' ? 15000 : 1;
+    if (!exchangeRates) return to === DEFAULT_CURRENCY ? 15000 : 1;
 
     const date = new Date(dateStr);
     const keys = Object.keys(exchangeRates);
@@ -117,10 +121,10 @@ export const TaxReportView = () => {
       return date >= start && date <= end;
     });
 
-    if (matchingKey) {
+    if (matchingKey && exchangeRates[matchingKey]) {
       const entries = exchangeRates[matchingKey].entries;
-      const fromEntry = from === 'IDR' ? { rate: 1 } : entries.find((e: any) => e.currency === from);
-      const toEntry = to === 'IDR' ? { rate: 1 } : entries.find((e: any) => e.currency === to);
+      const fromEntry = from === DEFAULT_CURRENCY ? { rate: 1 } : entries.find((e) => e.currency === from);
+      const toEntry = to === DEFAULT_CURRENCY ? { rate: 1 } : entries.find((e) => e.currency === to);
 
       if (fromEntry && toEntry) {
         // Rate is always relative to IDR in the data: 1 From = Rate IDR
@@ -131,7 +135,7 @@ export const TaxReportView = () => {
       }
     }
 
-    return to === 'IDR' ? 15000 : 1;
+    return to === DEFAULT_CURRENCY ? 15000 : 1;
   };
 
   const yearlyReports = useMemo(() => {

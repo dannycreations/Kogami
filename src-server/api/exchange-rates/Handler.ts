@@ -4,7 +4,8 @@ import type { ExchangeRateEntry } from '../../helpers/Scraper';
 
 export const scraper = makeScraper<ExchangeRateEntry>('exchange', (dom) => {
   const rows = dom.querySelectorAll('table tbody tr');
-  return Array.from(rows, (row: any) => {
+  return Array.from(rows, (item) => {
+    const row = item as Element;
     const full = row.querySelector('td:nth-child(2) .hidden-xs')?.textContent?.trim() || '';
     const currency = full.match(/\(([^)]+)\)/)?.[1] || full;
     const rateText = row.querySelector('td:nth-child(3) .m-l-5')?.textContent?.trim() || '0';

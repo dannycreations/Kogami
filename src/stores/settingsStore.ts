@@ -1,15 +1,19 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { DEFAULT_CURRENCY } from '../app/constants';
+
+import type { CurrencyCode } from '../app/constants';
+
 interface SettingState {
-  readonly preferredCurrency: string;
-  readonly setPreferredCurrency: (currency: string) => void;
+  readonly preferredCurrency: CurrencyCode;
+  readonly setPreferredCurrency: (currency: CurrencyCode) => void;
 }
 
 export const useSettingStore = create<SettingState>()(
   persist(
     (set) => ({
-      preferredCurrency: 'IDR',
+      preferredCurrency: DEFAULT_CURRENCY,
       setPreferredCurrency: (currency) => set({ preferredCurrency: currency }),
     }),
     {

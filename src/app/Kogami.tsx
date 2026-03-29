@@ -31,12 +31,16 @@ const NAV_LIST = [
   { id: 'reports', name: 'Tax Reports', icon: FileText },
   { id: 'settings', name: 'Settings', icon: Settings },
 ] as const;
+
 export const KogamiApp = () => {
-  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id'] | 'settings'>('investment');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id'] | 'settings'>('dashboard');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(() => {
+    const activeItem = NAV_LIST.find((item) => item.id === activeTab);
+    return activeItem && 'parentId' in activeItem ? activeItem.parentId : null;
+  });
 
   const toggleCategory = (id: string) => {
-    setExpandedCategories((prev) => (prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]));
+    setExpandedCategory((prev) => (prev === id ? null : id));
   };
 
   return (
@@ -54,14 +58,14 @@ export const KogamiApp = () => {
           </div>
         </div>
 
-        <div className="flex-1 py-4 overflow-y-auto">
+        <div className="flex-1 py-4 overflow-y-auto overflow-x-hidden">
           <div className="px-3 mb-2">
             <nav className="space-y-0.5">
               {NAV_LIST.map((item) => {
-                const isCategory = 'isCategory' in item && (item as any).isCategory;
-                const parentId = 'parentId' in item ? (item as any).parentId : undefined;
-                const isExpanded = isCategory ? expandedCategories.includes(item.id) : true;
-                const isVisible = !parentId || expandedCategories.includes(parentId);
+                const isCategory = 'isCategory' in item && item.isCategory;
+                const parentId = 'parentId' in item ? item.parentId : undefined;
+                const isExpanded = isCategory ? expandedCategory === item.id : true;
+                const isVisible = !parentId || expandedCategory === parentId;
 
                 if (!isVisible) return null;
 

@@ -1,15 +1,7 @@
 import { Globe } from 'lucide-react';
 
+import { CURRENCIES } from '../app/constants';
 import { useSettingStore } from '../stores/settingsStore';
-
-const CURRENCIES = [
-  { code: 'IDR', name: 'Indonesian Rupiah' },
-  { code: 'USD', name: 'US Dollar' },
-  { code: 'EUR', name: 'Euro' },
-  { code: 'GBP', name: 'British Pound' },
-  { code: 'JPY', name: 'Japanese Yen' },
-  { code: 'SGD', name: 'Singapore Dollar' },
-] as const;
 
 export const SettingView = () => {
   const preferredCurrency = useSettingStore((state) => state.preferredCurrency);

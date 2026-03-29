@@ -99,7 +99,7 @@ const prefetch = Effect.gen(function* () {
         yield* Effect.logError(`Prefetch failed for exchange rate ${date} -> ${errorMsg}`);
       } else {
         const data = result.right;
-        const usd = data.entries.find((e: any) => e.currency === 'USD');
+        const usd = data.entries.find((e) => e.currency === 'USD');
         yield* Effect.logInfo(`Successfully fetched/verified exchange rates [${data.startDate} to ${data.endDate}] USD: ${usd?.rate ?? 'N/A'}`);
       }
       yield* Effect.sleep('500 millis');

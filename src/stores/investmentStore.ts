@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+import { type CurrencyCode } from '../app/constants';
+
 export interface InvestmentTransaction {
   readonly id: string;
   readonly date: string;
@@ -8,7 +10,7 @@ export interface InvestmentTransaction {
   readonly symbol: string;
   readonly quantity: number;
   readonly price: number;
-  readonly currency: string;
+  readonly currency: CurrencyCode;
 }
 
 interface InvestmentState {

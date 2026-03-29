@@ -28,7 +28,10 @@ export interface BaseRateData<T extends BaseRateEntry> {
 export type ExchangeRateData = BaseRateData<ExchangeRateEntry>;
 export type InterestRateData = BaseRateData<InterestRateEntry>;
 
-export const makeScraper = <T extends BaseRateEntry>(type: 'exchange' | 'interest', parseRows: (dom: any) => T[]) => {
+export const makeScraper = <T extends BaseRateEntry>(
+  type: 'exchange' | 'interest',
+  parseRows: (dom: ReturnType<DOMParser['parseFromString']>) => T[],
+) => {
   const urlBase =
     type === 'exchange' ? 'https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak' : 'https://fiskal.kemenkeu.go.id/informasi-publik/tarif-bunga';
 
