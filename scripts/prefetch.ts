@@ -28,28 +28,31 @@ const validateAndCollectMissing = (dataFile: string, isMonthly: boolean) =>
     cutoffDate.setMonth(cutoffDate.getMonth() - 1);
     const cutoffStr = cutoffDate.toISOString().split('T')[0]!;
 
-    const sortedRanges = Object.values(store).sort((a, b) => b.startDate.localeCompare(a.startDate));
+    const ranges = Object.values(store);
+    const sortedRanges = ranges.sort((a, b) => b.startDate.localeCompare(a.startDate));
 
     if (sortedRanges.length === 0) {
       missingDates.add(todayStr);
     } else {
-      for (let i = 0; i < sortedRanges.length - 1; i++) {
-        const current = sortedRanges[i]!;
-        const next = sortedRanges[i + 1]!;
+      for (let i = 0; i < sortedRanges.length; i++) {
+        const range = sortedRanges[i]!;
 
-        if (current.startDate < cutoffStr) break;
+        // Gap detection
+        if (i < sortedRanges.length - 1) {
+          const next = sortedRanges[i + 1]!;
+          if (range.startDate > cutoffStr) {
+            const date = new Date(range.startDate);
+            date.setDate(date.getDate() - 1);
+            const expectedEndDate = date.toISOString().split('T')[0]!;
 
-        const date = new Date(current.startDate);
-        date.setDate(date.getDate() - 1);
-        const expectedEndDate = date.toISOString().split('T')[0]!;
-
-        if (expectedEndDate > next.endDate) {
-          yield* Effect.logWarning(`Gap detected in ${dataFile} between ${current.startDate} and ${next.endDate}`);
-          missingDates.add(expectedEndDate);
+            if (expectedEndDate > next.endDate) {
+              yield* Effect.logWarning(`Gap detected in ${dataFile} between ${range.startDate} and ${next.endDate}`);
+              missingDates.add(expectedEndDate);
+            }
+          }
         }
-      }
 
-      for (const range of sortedRanges) {
+        // Broken/Corrupt detection
         if (range.endDate < cutoffStr) continue;
 
         const start = new Date(range.startDate);
@@ -127,7 +130,7 @@ const prefetch = Effect.gen(function* () {
     }
   }
 
-  yield* Effect.logInfo('Prefetch cycle complete.');
+  yield* Effect.logInfo('Prefetch complete.');
 });
 
 const logger = makeLoggerClient();

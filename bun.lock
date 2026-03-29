@@ -21,7 +21,7 @@
         "zustand": "^5.0.12",
       },
       "devDependencies": {
-        "@effect/language-service": "^0.84.0",
+        "@effect/language-service": "^0.84.2",
         "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
         "@tailwindcss/vite": "^4.2.2",
         "@types/bun": "^1.3.11",
@@ -29,7 +29,7 @@
         "@types/react-syntax-highlighter": "^15.5.13",
         "@vitejs/plugin-react": "^6.0.1",
         "husky": "^9.1.7",
-        "npm-check-updates": "^19.6.5",
+        "npm-check-updates": "^19.6.6",
         "prettier": "^3.8.1",
         "typescript": "^6.0.2",
         "vite": "^8.0.3",
@@ -60,7 +60,7 @@
 
     "@effect/experimental": ["@effect/experimental@0.58.0", "", { "dependencies": { "uuid": "^11.0.3" }, "peerDependencies": { "@effect/platform": "^0.94.0", "effect": "^3.19.13", "ioredis": "^5", "lmdb": "^3" }, "optionalPeers": ["ioredis", "lmdb"] }, "sha512-IEP9sapjF6rFy5TkoqDPc86st/fnqUfjT7Xa3pWJrFGr1hzaMXHo+mWsYOZS9LAOVKnpHuVziDK97EP5qsCHVA=="],
 
-    "@effect/language-service": ["@effect/language-service@0.84.0", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-bw+xSYW3ItcgkgYlfnt7yx6g2ZjqoEpOjVVVg490F1waneIK/TeGw3jrro1LULJ+Z9sUj1dvhibQKHp9GK1CEg=="],
+    "@effect/language-service": ["@effect/language-service@0.84.2", "", { "bin": { "effect-language-service": "cli.js" } }, "sha512-l04qNxpiA8rY5yXWckRPJ7Mk5MNerXuNymSFf+IdflfI5i8jgL1bpBNLuP6ijg7wgjdHc/KmTnCj2kT0SCntuA=="],
 
     "@effect/platform": ["@effect/platform@0.96.0", "", { "dependencies": { "find-my-way-ts": "^0.1.6", "msgpackr": "^1.11.4", "multipasta": "^0.2.7" }, "peerDependencies": { "effect": "^3.21.0" } }, "sha512-U7PLhkVzg7zzrgFvyWATOzD6reL87KG/fcdOxgLWBQ/J5CCU6qdPAVG+0o6o+IxcsLoqGwxs+rFxaFzrdtDV1A=="],
 
@@ -348,7 +348,7 @@
 
     "node-gyp-build-optional-packages": ["node-gyp-build-optional-packages@5.2.2", "", { "dependencies": { "detect-libc": "^2.0.1" }, "bin": { "node-gyp-build-optional-packages": "bin.js", "node-gyp-build-optional-packages-optional": "optional.js", "node-gyp-build-optional-packages-test": "build-test.js" } }, "sha512-s+w+rBWnpTMwSFbaE0UXsRlg7hU4FjekKU4eyAih5T8nJuNZT1nNsskXpxmeqSK9UzkBl6UgRlnKc8hz8IEqOw=="],
 
-    "npm-check-updates": ["npm-check-updates@19.6.5", "", { "bin": { "npm-check-updates": "build/cli.js", "ncu": "build/cli.js" } }, "sha512-XlBUMC30relXfEerrnX239W9iB30U6Woz0Hj42Sv6iSF4EGOvj2mS2r45sZ3RglH0VPBxXOWooMxObZ/SMZhrw=="],
+    "npm-check-updates": ["npm-check-updates@19.6.6", "", { "bin": { "npm-check-updates": "build/cli.js", "ncu": "build/cli.js" } }, "sha512-AvlRcnlUEyBEJfblUSjYMJwYKvCIWDRuCDa6x3hyUMTMkI3kslmFm0LDqwgzQfshfNh0Z3ouKiA4fLjRN7HejQ=="],
 
     "npm-run-path": ["npm-run-path@6.0.0", "", { "dependencies": { "path-key": "^4.0.0", "unicorn-magic": "^0.3.0" } }, "sha512-9qny7Z9DsQU8Ou39ERsPU4OZQlSTP47ShQzuKZ6PRXpYLtIFgl/DEBYEXKlvcEa+9tHVcK8CF81Y2V72qaZhWA=="],
 

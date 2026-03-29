@@ -144,7 +144,7 @@ const BulkImportModal = memo(({ isOpen, onClose }: { isOpen: boolean; onClose: (
         }
 
         return {
-          id: Math.random().toString(36).substring(2, 9),
+          id: crypto.randomUUID(),
           date,
           action: action as InvestmentTransaction['action'],
           symbol: symbol || '',
@@ -227,7 +227,7 @@ export const InvestmentView = () => {
 
   const addRow = useCallback(() => {
     addTransaction({
-      id: Math.random().toString(36).substring(2, 9),
+      id: crypto.randomUUID(),
       date: new Date().toISOString().split('T')[0]!,
       action: 'BUY',
       symbol: '',

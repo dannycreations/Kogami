@@ -79,24 +79,47 @@ export const makeScraper = <T extends BaseRateEntry>(
       const store = yield* manager.getStore;
       const today = new Date().toISOString().split('T')[0]!;
 
-      const existing = Object.values(store).find((data: BaseRateData<T>) => {
-        if (date < data.startDate || date > data.endDate) return false;
+      let existing: BaseRateData<T> | undefined;
+      let fallback: BaseRateData<T> | undefined;
+
+      // Try year-based fast lookup first
+      const yearStr = date.substring(0, 4);
+      const yearEntry = store[yearStr];
+      if (yearEntry && date >= yearEntry.startDate && date <= yearEntry.endDate) {
+        fallback = yearEntry;
         if (type === 'exchange') {
-          const duration = getDayDiff(data.startDate, data.endDate);
-          if (duration <= 7) return true;
-          return !(today >= data.startDate || date <= today);
+          const duration = getDayDiff(yearEntry.startDate, yearEntry.endDate);
+          if (duration <= 7 || !(today >= yearEntry.startDate || date <= today)) {
+            existing = yearEntry;
+          }
+        } else {
+          existing = yearEntry;
         }
-        return true;
-      });
+      }
+
+      if (!existing) {
+        const entries = Object.values(store);
+        for (const data of entries) {
+          if (date >= data.startDate && date <= data.endDate) {
+            fallback = data;
+            if (type === 'exchange') {
+              const duration = getDayDiff(data.startDate, data.endDate);
+              if (duration <= 7 || !(today >= data.startDate || date <= today)) {
+                existing = data;
+                break;
+              }
+            } else {
+              existing = data;
+              break;
+            }
+          }
+        }
+      }
 
       if (existing) {
         yield* Effect.logInfo(`Cache hit: ${existing.startDate} to ${existing.endDate}`);
         return existing as BaseRateData<T>;
       }
-
-      const fallback = Object.values(store).find((data: BaseRateData<T>) => {
-        return date >= data.startDate && date <= data.endDate;
-      }) as BaseRateData<T> | undefined;
 
       const data = yield* scrape(date).pipe(
         Effect.catchAll((error) => {
