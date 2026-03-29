@@ -16,10 +16,12 @@ import { useState } from 'react';
 
 import { ExchangeRatesView } from '../components/ExchangeRatesView';
 import { InterestRatesView } from '../components/InterestRatesView';
+import { InvestmentView } from '../components/InvestmentView';
+import { TaxReportsView } from '../components/TaxReportsView';
 
 const NAV_LIST = [
   { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
-  { id: 'transactions', name: 'Transactions', icon: FileSpreadsheet },
+  { id: 'investment', name: 'Investments', icon: FileSpreadsheet },
   { id: 'exchange-rates', name: 'Exchange Rates', icon: Calculator },
   { id: 'interest-rates', name: 'Interest Rates', icon: Banknote },
   { id: 'reports', name: 'Tax Reports', icon: FileText },
@@ -28,7 +30,7 @@ const NAV_LIST = [
 ] as const;
 
 export const KogamiApp = () => {
-  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id']>('exchange-rates');
+  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id']>('investment');
 
   return (
     <div className="min-h-screen bg-[#fafafa] flex text-surface-900 font-sans">
@@ -97,6 +99,10 @@ export const KogamiApp = () => {
             <ExchangeRatesView />
           ) : activeTab === 'interest-rates' ? (
             <InterestRatesView />
+          ) : activeTab === 'investment' ? (
+            <InvestmentView />
+          ) : activeTab === 'reports' ? (
+            <TaxReportsView />
           ) : (
             <div className="h-64 flex flex-col items-center justify-center bg-white rounded border border-dashed border-surface-300 text-surface-500">
               <FileSpreadsheet className="h-8 w-8 text-surface-300 mb-3" strokeWidth={1} />
