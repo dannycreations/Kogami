@@ -17,7 +17,7 @@ export const useSettingStore = create<SettingState>()(
       setPreferredCurrency: (currency) => set({ preferredCurrency: currency }),
     }),
     {
-      name: 'kogami_settings_store',
+      name: 'kogami_setting',
     },
   ),
 );

@@ -35,7 +35,7 @@ const EditableRow = memo(
         <div className="v-cell border-r border-surface-100 p-0 w-24 shrink-0 flex items-center justify-center bg-white">
           <select
             value={transaction.action}
-            onChange={(e) => onUpdate(transaction.id, { action: e.target.value as 'buy' | 'sell' })}
+            onChange={(e) => onUpdate(transaction.id, { action: e.target.value as InvestmentTransaction['action'] })}
             className="w-full mx-1 h-7 px-0.5 text-surface-900 text-[9px] font-bold uppercase cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto"
           >
             <option value="buy">BUY</option>
@@ -47,7 +47,7 @@ const EditableRow = memo(
             type="text"
             value={transaction.symbol}
             placeholder="Symbol (e.g. AAPL)"
-            onChange={(e) => onUpdate(transaction.id, { symbol: e.target.value.toUpperCase() })}
+            onChange={(e) => onUpdate(transaction.id, { symbol: e.target.value })}
             className="w-full h-full px-3 py-2 bg-transparent border-none focus:ring-2 focus:ring-brand-500 text-xs font-bold text-brand-900"
           />
         </div>
@@ -146,10 +146,10 @@ const BulkImportModal = memo(({ isOpen, onClose }: { isOpen: boolean; onClose: (
         return {
           id: Math.random().toString(36).substring(2, 9),
           date,
-          action: action.toLowerCase() as 'buy' | 'sell',
+          action: action as InvestmentTransaction['action'],
           symbol: symbol || '',
           quantity: parsedQuantity,
-          currency: (currency as CurrencyCode) || 'USD',
+          currency: (currency?.toUpperCase() as CurrencyCode) || 'USD',
           price: parsedPrice,
         };
       });
@@ -229,7 +229,7 @@ export const InvestmentView = () => {
     addTransaction({
       id: Math.random().toString(36).substring(2, 9),
       date: new Date().toISOString().split('T')[0]!,
-      action: 'buy',
+      action: 'BUY',
       symbol: '',
       quantity: 0,
       price: 0,

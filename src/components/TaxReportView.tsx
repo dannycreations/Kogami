@@ -23,7 +23,8 @@ interface YearlyReport {
 interface InventoryItem {
   readonly symbol: string;
   readonly quantity: number;
-  readonly priceUsd: number;
+  readonly price: number;
+  readonly currency: string;
   readonly date: string;
   readonly rateAtBuy: number;
 }
@@ -111,27 +112,38 @@ export const TaxReportView = () => {
     if (from === to) return 1;
     if (!exchangeRates) return to === DEFAULT_CURRENCY ? 15000 : 1;
 
-    const date = new Date(dateStr);
+    const parseDate = (d: string) => {
+      const [year, month, day] = d.split('-').map(Number);
+      return new Date(year!, month! - 1, day);
+    };
+
+    const targetDate = parseDate(dateStr);
     const keys = Object.keys(exchangeRates);
+
+    // 1. Try exact year match if the store is organized by year
+    const yearStr = dateStr.split('-')[0];
+    if (yearStr && exchangeRates[yearStr]) {
+      const entry = exchangeRates[yearStr]!;
+      if (entry.entries) {
+        const fromEntry = from === DEFAULT_CURRENCY ? { rate: 1 } : entry.entries.find((e: any) => e.currency === from);
+        const toEntry = to === DEFAULT_CURRENCY ? { rate: 1 } : entry.entries.find((e: any) => e.currency === to);
+        if (fromEntry && toEntry) return fromEntry.rate / toEntry.rate;
+      }
+    }
+
+    // 2. Try searching by range
     const matchingKey = keys.find((key) => {
       const entry = exchangeRates[key];
       if (!entry || !entry.startDate || !entry.endDate) return false;
-      const start = new Date(entry.startDate);
-      const end = new Date(entry.endDate);
-      return date >= start && date <= end;
+      return targetDate >= parseDate(entry.startDate) && targetDate <= parseDate(entry.endDate);
     });
 
-    if (matchingKey && exchangeRates[matchingKey]) {
-      const entries = exchangeRates[matchingKey].entries;
-      const fromEntry = from === DEFAULT_CURRENCY ? { rate: 1 } : entries.find((e) => e.currency === from);
-      const toEntry = to === DEFAULT_CURRENCY ? { rate: 1 } : entries.find((e) => e.currency === to);
-
-      if (fromEntry && toEntry) {
-        // Rate is always relative to IDR in the data: 1 From = Rate IDR
-        // 1 From = fromEntry.rate IDR
-        // 1 To = toEntry.rate IDR
-        // 1 From = (fromEntry.rate / toEntry.rate) To
-        return fromEntry.rate / toEntry.rate;
+    if (matchingKey) {
+      const entry = exchangeRates[matchingKey]!;
+      if (entry.entries) {
+        const fromEntry = from === DEFAULT_CURRENCY ? { rate: 1 } : entry.entries.find((e: any) => e.currency === from);
+        const toEntry = to === DEFAULT_CURRENCY ? { rate: 1 } : entry.entries.find((e: any) => e.currency === to);
+        if (fromEntry && toEntry) return fromEntry.rate / toEntry.rate;
       }
     }
 
@@ -141,12 +153,24 @@ export const TaxReportView = () => {
   const yearlyReports = useMemo(() => {
     if (!transactions.length) return [];
 
-    const sortedTxs = [...transactions].filter((tx) => tx.date && tx.symbol).sort((a, b) => a.date.localeCompare(b.date));
+    const sortedTxs = [...transactions]
+      .filter((tx) => tx.date && tx.symbol)
+      .sort((a, b) => {
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        // If same date, BUY comes before SELL to ensure we have inventory to sell
+        if (a.action === b.action) return 0;
+        return a.action === 'BUY' ? -1 : 1;
+      });
 
     if (sortedTxs.length === 0) return [];
 
-    const startYear = new Date(sortedTxs[0]!.date).getFullYear();
-    const endYear = new Date().getFullYear();
+    const getYearFromDate = (dateStr: string) => parseInt(dateStr.split('-')[0]!, 10);
+
+    const startYear = getYearFromDate(sortedTxs[0]!.date);
+    const lastTxYear = getYearFromDate(sortedTxs[sortedTxs.length - 1]!.date);
+    const currentYear = new Date().getFullYear();
+    const endYear = Math.max(lastTxYear, currentYear);
     const years: number[] = [];
     for (let y = startYear; y <= endYear; y++) {
       years.push(y);
@@ -156,33 +180,36 @@ export const TaxReportView = () => {
     let inventory: InventoryItem[] = [];
 
     years.forEach((year) => {
-      const txsInYear = sortedTxs.filter((tx) => new Date(tx.date).getFullYear() === year);
+      const txsInYear = sortedTxs.filter((tx) => getYearFromDate(tx.date) === year);
       let realizedProfit = 0;
 
       txsInYear.forEach((tx) => {
         const rateToPreferred = getExchangeRate(tx.date, tx.currency, preferredCurrency);
-        if (tx.action === 'buy') {
+        const { symbol, action } = tx;
+
+        if (action === 'BUY') {
           inventory.push({
-            symbol: tx.symbol,
-            quantity: tx.quantity,
-            priceUsd: tx.price,
+            symbol: symbol,
+            quantity: tx.quantity || 0,
+            price: tx.price || 0,
+            currency: tx.currency,
             date: tx.date,
-            rateAtBuy: rateToPreferred, // This is rate from tx.currency to preferred at that time
+            rateAtBuy: rateToPreferred,
           });
-        } else {
-          let remainingToSell = tx.quantity;
+        } else if (action === 'SELL') {
+          let remainingToSell = tx.quantity || 0;
 
           for (let i = 0; i < inventory.length && remainingToSell > 0; i++) {
             const item = inventory[i]!;
-            if (item.symbol === tx.symbol) {
+            if (item.symbol === symbol) {
               const sellFromThisItem = Math.min(item.quantity, remainingToSell);
-              const buyValuePreferred = sellFromThisItem * item.priceUsd * item.rateAtBuy;
-              const sellValuePreferred = sellFromThisItem * tx.price * rateToPreferred;
+              const buyValuePreferred = sellFromThisItem * item.price * item.rateAtBuy;
+              const sellValuePreferred = sellFromThisItem * (tx.price || 0) * rateToPreferred;
               realizedProfit += sellValuePreferred - buyValuePreferred;
 
               remainingToSell -= sellFromThisItem;
 
-              if (Math.abs(item.quantity - sellFromThisItem) < 0.0000001) {
+              if (Math.abs(item.quantity - sellFromThisItem) < 1e-10) {
                 inventory.splice(i, 1);
                 i--;
               } else {
@@ -197,15 +224,14 @@ export const TaxReportView = () => {
       const holdingsMap = new Map<string, { quantity: number; costBasisOriginal: number; valuePreferredAtDec31: number }>();
 
       inventory.forEach((item) => {
-        const dec31Rate = getExchangeRate(`${year}-12-31`, 'USD', preferredCurrency); // Assuming prices are USD-based for inventory valuation logic if not specified
-        // Correction: item.priceUsd is original price. We should ideally know the original currency.
-        // TaxReportsView currently assumes inventory is stored with priceUsd.
+        const dec31Rate = getExchangeRate(`${year}-12-31`, item.currency, preferredCurrency);
 
-        const existing = holdingsMap.get(item.symbol) || { quantity: 0, costBasisOriginal: 0, valuePreferredAtDec31: 0 };
-        const itemValuePreferred = item.quantity * item.priceUsd * dec31Rate;
-        holdingsMap.set(item.symbol, {
+        const symbol = item.symbol;
+        const existing = holdingsMap.get(symbol) || { quantity: 0, costBasisOriginal: 0, valuePreferredAtDec31: 0 };
+        const itemValuePreferred = item.quantity * item.price * dec31Rate;
+        holdingsMap.set(symbol, {
           quantity: existing.quantity + item.quantity,
-          costBasisOriginal: existing.costBasisOriginal + item.quantity * item.priceUsd,
+          costBasisOriginal: existing.costBasisOriginal + item.quantity * item.price * item.rateAtBuy,
           valuePreferredAtDec31: existing.valuePreferredAtDec31 + itemValuePreferred,
         });
       });
@@ -227,7 +253,7 @@ export const TaxReportView = () => {
     });
 
     return reports.sort((a, b) => b.year - a.year);
-  }, [transactions, exchangeRates]);
+  }, [transactions, exchangeRates, preferredCurrency]);
 
   const virtualizer = useVirtualizer({
     count: yearlyReports.length,
