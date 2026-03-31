@@ -391,9 +391,13 @@ export const TaxReportView = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Total Realized Profit</span>
             </div>
             <div className="flex items-baseline space-x-1">
-              <span className={`text-2xl font-black tracking-tight ${totalRealizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-                {formatter.format(totalRealizedProfit)}
-              </span>
+              {!exchangeRates ? (
+                <div className="h-8 w-32 bg-surface-100 animate-pulse rounded" />
+              ) : (
+                <span className={`text-2xl font-black tracking-tight ${totalRealizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {formatter.format(totalRealizedProfit)}
+                </span>
+              )}
             </div>
             <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
               <div className="w-1 h-1 rounded-full bg-surface-200 mr-2" />
@@ -414,7 +418,11 @@ export const TaxReportView = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Portfolio Value</span>
             </div>
             <div className="flex items-baseline space-x-1 text-surface-900">
-              <span className="text-2xl font-black tracking-tight">{formatter.format(currentHoldingsValue)}</span>
+              {!exchangeRates ? (
+                <div className="h-8 w-32 bg-surface-100 animate-pulse rounded" />
+              ) : (
+                <span className="text-2xl font-black tracking-tight">{formatter.format(currentHoldingsValue)}</span>
+              )}
             </div>
             <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
               <div className="w-1 h-1 rounded-full bg-brand-200 mr-2" />
@@ -435,12 +443,24 @@ export const TaxReportView = () => {
               <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Reporting Range</span>
             </div>
             <div className="flex items-baseline space-x-2 text-surface-900">
-              <span className="text-2xl font-black tracking-tight">{yearlyReports.length}</span>
-              <span className="text-sm font-bold text-surface-400 uppercase">Fiscal Years</span>
+              {!exchangeRates ? (
+                <div className="h-8 w-12 bg-surface-100 animate-pulse rounded" />
+              ) : (
+                <>
+                  <span className="text-2xl font-black tracking-tight">{yearlyReports.length}</span>
+                  <span className="text-sm font-bold text-surface-400 uppercase">Fiscal Years</span>
+                </>
+              )}
             </div>
             <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
               <div className="w-1 h-1 rounded-full bg-surface-300 mr-2" />
-              From {yearlyReports[yearlyReports.length - 1]?.year} to {yearlyReports[0]?.year}
+              {!exchangeRates ? (
+                <div className="h-3 w-24 bg-surface-100 animate-pulse rounded" />
+              ) : (
+                <>
+                  From {yearlyReports[yearlyReports.length - 1]?.year} to {yearlyReports[0]?.year}
+                </>
+              )}
             </div>
           </div>
         </div>
