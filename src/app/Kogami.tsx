@@ -53,7 +53,7 @@ export const KogamiApp = () => {
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold tracking-tight text-surface-900 leading-tight">Kogami</span>
-              <span className="text-[10px] uppercase tracking-wider text-surface-500 font-semibold">Financial Management</span>
+              <span className="text-[10px] uppercase tracking-wider text-surface-500 font-semibold">Finance</span>
             </div>
           </div>
         </div>

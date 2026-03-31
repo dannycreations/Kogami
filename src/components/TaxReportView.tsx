@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
+import { Calculator, ChevronDown, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { DEFAULT_CURRENCY } from '../app/constants';
@@ -18,6 +18,10 @@ interface YearlyReport {
     costBasisOriginal: number;
     valuePreferredAtDec31: number;
   }[];
+  profitBreakdown: {
+    symbol: string;
+    profit: number;
+  }[];
 }
 
 interface InventoryItem {
@@ -29,60 +33,139 @@ interface InventoryItem {
   readonly rateAtBuy: number;
 }
 
-const SummaryRow = memo(({ report, style, formatter }: { report: YearlyReport; style?: React.CSSProperties; formatter: Intl.NumberFormat }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+const SummaryRow = memo(
+  ({
+    report,
+    style,
+    formatter,
+    index,
+    measureElement,
+  }: {
+    report: YearlyReport;
+    style?: React.CSSProperties;
+    formatter: Intl.NumberFormat;
+    index: number;
+    measureElement: (el: HTMLElement | null) => void;
+  }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const rowRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <div className="flex flex-col w-full border-b border-surface-100 bg-white" style={style}>
-      <div
-        className="v-row flex items-stretch w-full hover:bg-surface-50 transition-colors cursor-pointer min-h-[60px]"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        <div className="v-cell border-r border-surface-100 p-0 flex items-center justify-center w-32 shrink-0">
-          <div className="flex flex-col items-center">
-            <span className="text-xs font-bold text-surface-900">{report.year}</span>
-            <span className="text-[9px] text-surface-400 font-mono">{report.transactionsCount} TXs</span>
-          </div>
-        </div>
-        <div className="v-cell border-r border-surface-100 flex-1 flex flex-col justify-center px-4">
-          <span className="text-[9px] font-bold text-surface-400 uppercase">Realized Profit (FIFO)</span>
-          <span className={`font-mono text-xs font-bold ${report.realizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-            {formatter.format(report.realizedProfit)}
-          </span>
-        </div>
-        <div className="v-cell border-r border-surface-100 flex-1 flex flex-col justify-center px-4">
-          <span className="text-[9px] font-bold text-surface-400 uppercase">Holdings (Dec 31 Rates)</span>
-          <span className="font-mono text-xs font-bold text-brand-900">{formatter.format(report.holdingsValue)}</span>
-        </div>
-        <div className="v-cell text-center w-12 shrink-0 flex items-center justify-center">
-          <span className="text-xs font-medium text-surface-500">{isExpanded ? '▼' : '▶'}</span>
-        </div>
-      </div>
+    useEffect(() => {
+      if (rowRef.current) {
+        measureElement(rowRef.current);
+      }
+    }, [isExpanded, measureElement]);
 
-      {isExpanded && (
-        <div className="bg-surface-50/50 p-4 space-y-3">
-          <div className="flex items-center justify-between border-b border-surface-200 pb-2">
-            <h3 className="text-[10px] font-bold text-surface-600 uppercase tracking-wider">Holdings at Dec 31, {report.year}</h3>
+    return (
+      <div ref={rowRef} data-index={index} className="flex flex-col w-full border-b border-surface-100 bg-white" style={style}>
+        <div
+          className={`flex items-stretch w-full hover:bg-surface-50 transition-colors cursor-pointer min-h-[72px] ${isExpanded ? 'bg-surface-50' : ''}`}
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          <div className="flex items-center justify-center w-24 shrink-0 border-r border-surface-100 bg-surface-50/30">
+            <div className="flex flex-col items-center">
+              <span className="text-sm font-black text-surface-900 tracking-tight">{report.year}</span>
+              <span className="text-[9px] font-bold text-surface-400 uppercase">{report.transactionsCount} txs</span>
+            </div>
           </div>
-          <div className="space-y-2">
-            {report.holdings.map((h) => (
-              <div key={h.symbol} className="flex items-center justify-between text-xs">
-                <div className="flex items-center space-x-3">
-                  <span className="font-bold text-surface-900 w-16">{h.symbol}</span>
-                  <span className="font-mono text-surface-500">{h.quantity.toLocaleString()} units</span>
-                </div>
-                <div className="flex flex-col items-end">
-                  <span className="font-mono font-bold text-brand-800">{formatter.format(h.valuePreferredAtDec31)}</span>
-                </div>
+
+          <div className="flex-1 flex items-center px-6">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-surface-400 uppercase tracking-wider mb-0.5">Realized Gain/Loss</span>
+              <div className="flex items-center space-x-2">
+                {report.realizedProfit >= 0 ? <TrendingUp className="h-3 w-3 text-emerald-500" /> : <TrendingDown className="h-3 w-3 text-red-500" />}
+                <span className={`font-mono text-sm font-bold ${report.realizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                  {formatter.format(report.realizedProfit)}
+                </span>
               </div>
-            ))}
-            {report.holdings.length === 0 && <p className="text-xs text-surface-400 italic">No holdings for this period.</p>}
+            </div>
+          </div>
+
+          <div className="flex-1 flex items-center px-6 border-l border-surface-100/50">
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-surface-400 uppercase tracking-wider mb-0.5">Holdings (Dec 31)</span>
+              <div className="flex items-center space-x-2">
+                <DollarSign className="h-3 w-3 text-brand-400" />
+                <span className="font-mono text-sm font-bold text-surface-900">{formatter.format(report.holdingsValue)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="w-12 shrink-0 flex items-center justify-center border-l border-surface-100">
+            <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''} text-surface-400 group-hover:text-surface-600`}>
+              <ChevronDown className="h-4 w-4" />
+            </div>
           </div>
         </div>
-      )}
-    </div>
-  );
-});
+
+        {isExpanded && (
+          <div className="bg-white border-t border-surface-100 grid grid-cols-1 md:grid-cols-2 gap-px bg-surface-100">
+            <div className="bg-white p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em]">Profit Breakdown</h3>
+                <div className="h-px flex-1 mx-4 bg-surface-100" />
+              </div>
+              <div className="space-y-2.5">
+                {report.profitBreakdown.map((p) => (
+                  <div key={p.symbol} className="flex items-center justify-between group">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded bg-surface-50 flex items-center justify-center text-[10px] font-bold text-surface-600 border border-surface-100 group-hover:border-brand-200 group-hover:bg-brand-50 transition-colors">
+                        {p.symbol.substring(0, 2)}
+                      </div>
+                      <span className="text-xs font-bold text-surface-800">{p.symbol}</span>
+                    </div>
+                    <span className={`font-mono text-xs font-bold ${p.profit >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {p.profit > 0 ? '+' : ''}
+                      {formatter.format(p.profit)}
+                    </span>
+                  </div>
+                ))}
+                {report.profitBreakdown.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-6 text-surface-300">
+                    <Calculator className="h-6 w-6 mb-2 opacity-20" />
+                    <p className="text-[10px] font-medium uppercase tracking-widest">No realized profit</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-white p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em]">Year-End Inventory</h3>
+                <div className="h-px flex-1 mx-4 bg-surface-100" />
+              </div>
+              <div className="space-y-2.5">
+                {report.holdings.map((h) => (
+                  <div key={h.symbol} className="flex items-center justify-between group">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded bg-surface-50 flex items-center justify-center text-[10px] font-bold text-surface-600 border border-surface-100 group-hover:border-brand-200 group-hover:bg-brand-50 transition-colors">
+                        {h.symbol.substring(0, 2)}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-surface-800">{h.symbol}</span>
+                        <span className="text-[10px] font-mono text-surface-400 leading-none">{h.quantity.toLocaleString()} units</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="font-mono text-xs font-bold text-brand-900">{formatter.format(h.valuePreferredAtDec31)}</span>
+                      <span className="text-[9px] font-bold text-surface-400 uppercase leading-none mt-0.5">Market Value</span>
+                    </div>
+                  </div>
+                ))}
+                {report.holdings.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-6 text-surface-300">
+                    <TrendingDown className="h-6 w-6 mb-2 opacity-20" />
+                    <p className="text-[10px] font-medium uppercase tracking-widest">Zero inventory</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  },
+);
 
 export const TaxReportView = () => {
   const [exchangeRates, setExchangeRates] = useState<Record<
@@ -181,6 +264,7 @@ export const TaxReportView = () => {
     for (let year = startYear; year <= endYear; year++) {
       let txsInYearCount = 0;
       let realizedProfit = 0;
+      const profitBreakdownMap = new Map<string, number>();
 
       while (txIdx >= 0 && parseInt(sortedTxs[txIdx]!.date.substring(0, 4), 10) === year) {
         const tx = sortedTxs[txIdx]!;
@@ -197,23 +281,27 @@ export const TaxReportView = () => {
           }
           symbolInv.push({
             symbol,
-            quantity: tx.quantity || 0,
+            quantity: Math.abs(tx.quantity || 0),
             price: tx.price || 0,
             currency: tx.currency,
             date: tx.date,
             rateAtBuy: rateToPreferred,
           });
         } else if (action === 'SELL') {
-          let remainingToSell = tx.quantity || 0;
+          let remainingToSell = Math.abs(tx.quantity || 0);
           const symbolInv = inventory.get(symbol);
 
           if (symbolInv) {
+            let symbolProfit = 0;
             while (remainingToSell > 0 && symbolInv.length > 0) {
               const item = symbolInv[0]!;
               const sellFromThisItem = Math.min(item.quantity, remainingToSell);
               const buyValuePreferred = sellFromThisItem * item.price * item.rateAtBuy;
               const sellValuePreferred = sellFromThisItem * (tx.price || 0) * rateToPreferred;
-              realizedProfit += sellValuePreferred - buyValuePreferred;
+              const profit = sellValuePreferred - buyValuePreferred;
+
+              realizedProfit += profit;
+              symbolProfit += profit;
 
               remainingToSell -= sellFromThisItem;
 
@@ -223,6 +311,7 @@ export const TaxReportView = () => {
                 symbolInv[0] = { ...item, quantity: item.quantity - sellFromThisItem };
               }
             }
+            profitBreakdownMap.set(symbol, (profitBreakdownMap.get(symbol) || 0) + symbolProfit);
           }
         }
       }
@@ -267,6 +356,9 @@ export const TaxReportView = () => {
         holdingsValue: yearEndHoldingsValue,
         transactionsCount: txsInYearCount,
         holdings: currentHoldings,
+        profitBreakdown: Array.from(profitBreakdownMap.entries())
+          .map(([symbol, profit]) => ({ symbol, profit }))
+          .sort((a, b) => b.profit - a.profit),
       });
     }
 
@@ -276,38 +368,81 @@ export const TaxReportView = () => {
   const virtualizer = useVirtualizer({
     count: yearlyReports.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 60,
+    estimateSize: () => 72,
     overscan: 5,
+    measureElement: (el) => (el as HTMLElement).getBoundingClientRect().height,
   });
 
   const totalRealizedProfit = yearlyReports.reduce((acc, curr) => acc + curr.realizedProfit, 0);
   const currentHoldingsValue = yearlyReports.length > 0 ? yearlyReports[0]!.holdingsValue : 0;
 
   return (
-    <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-2">
-        <div className="bg-white p-4 rounded-lg border border-surface-200 shadow-sm">
-          <div className="flex items-center space-x-2 text-surface-500 mb-1">
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
-            <span className="text-xs font-bold uppercase tracking-wider">Total Realized Profit ({preferredCurrency})</span>
+    <div className="flex flex-col h-full space-y-4 max-h-[calc(100vh-7rem)]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+            <TrendingUp className="h-16 w-16 text-emerald-900" />
           </div>
-          <p className={`text-xl font-bold ${totalRealizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-            {formatter.format(totalRealizedProfit)}
-          </p>
+          <div className="relative z-10">
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="p-1.5 bg-emerald-50 rounded-lg">
+                <TrendingUp className="h-4 w-4 text-emerald-600" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Total Realized Profit</span>
+            </div>
+            <div className="flex items-baseline space-x-1">
+              <span className={`text-2xl font-black tracking-tight ${totalRealizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                {formatter.format(totalRealizedProfit)}
+              </span>
+            </div>
+            <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
+              <div className="w-1 h-1 rounded-full bg-surface-200 mr-2" />
+              Cumulative across all years
+            </div>
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-surface-200 shadow-sm">
-          <div className="flex items-center space-x-2 text-surface-500 mb-1">
-            <DollarSign className="h-4 w-4 text-brand-500" />
-            <span className="text-xs font-bold uppercase tracking-wider">Latest Holdings Value ({preferredCurrency})</span>
+
+        <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+            <DollarSign className="h-16 w-16 text-brand-900" />
           </div>
-          <p className="text-xl font-bold text-brand-900">{formatter.format(currentHoldingsValue)}</p>
+          <div className="relative z-10">
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="p-1.5 bg-brand-50 rounded-lg">
+                <DollarSign className="h-4 w-4 text-brand-600" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Portfolio Value</span>
+            </div>
+            <div className="flex items-baseline space-x-1 text-surface-900">
+              <span className="text-2xl font-black tracking-tight">{formatter.format(currentHoldingsValue)}</span>
+            </div>
+            <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
+              <div className="w-1 h-1 rounded-full bg-brand-200 mr-2" />
+              Current year-end inventory
+            </div>
+          </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-surface-200 shadow-sm">
-          <div className="flex items-center space-x-2 text-surface-500 mb-1">
-            <TrendingDown className="h-4 w-4 text-surface-400" />
-            <span className="text-xs font-bold uppercase tracking-wider">Report Span</span>
+
+        <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Calculator className="h-16 w-16 text-surface-900" />
           </div>
-          <p className="text-xl font-bold text-surface-900">{yearlyReports.length} Years</p>
+          <div className="relative z-10">
+            <div className="flex items-center space-x-2 mb-3">
+              <div className="p-1.5 bg-surface-100 rounded-lg">
+                <Calculator className="h-4 w-4 text-surface-600" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Reporting Range</span>
+            </div>
+            <div className="flex items-baseline space-x-2 text-surface-900">
+              <span className="text-2xl font-black tracking-tight">{yearlyReports.length}</span>
+              <span className="text-sm font-bold text-surface-400 uppercase">Fiscal Years</span>
+            </div>
+            <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
+              <div className="w-1 h-1 rounded-full bg-surface-300 mr-2" />
+              From {yearlyReports[yearlyReports.length - 1]?.year} to {yearlyReports[0]?.year}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -319,16 +454,16 @@ export const TaxReportView = () => {
         hasData={yearlyReports.length > 0}
         headers={
           <>
-            <div className="px-4 py-2.5 w-32 text-center border-r border-surface-200 bg-surface-50 shrink-0 flex items-center justify-center font-bold text-xs uppercase text-surface-500">
-              Year
+            <div className="px-4 py-3 w-24 text-center border-r border-surface-200 bg-surface-50 shrink-0 flex items-center justify-center font-black text-[10px] uppercase tracking-widest text-surface-500">
+              Fiscal Year
             </div>
-            <div className="px-4 py-2.5 border-r border-surface-200 bg-surface-50 flex-1 flex items-center font-bold text-xs uppercase text-surface-500">
-              Realized Profit
+            <div className="px-6 py-3 border-r border-surface-200 bg-surface-50 flex-1 flex items-center font-black text-[10px] uppercase tracking-widest text-surface-500">
+              Net Gain/Loss
             </div>
-            <div className="px-4 py-2.5 border-r border-surface-200 bg-surface-50 flex-1 flex items-center font-bold text-xs uppercase text-surface-500">
-              Year-End Holdings
+            <div className="px-6 py-3 border-r border-surface-200 bg-surface-50 flex-1 flex items-center font-black text-[10px] uppercase tracking-widest text-surface-500">
+              Year-End Assets
             </div>
-            <div className="px-4 py-2.5 text-center text-surface-400 font-bold text-xs uppercase bg-surface-50 w-12 shrink-0 flex items-center justify-center">
+            <div className="px-4 py-3 text-center text-surface-400 font-black text-[10px] uppercase tracking-widest bg-surface-50 w-12 shrink-0 flex items-center justify-center">
               -
             </div>
           </>
@@ -338,6 +473,8 @@ export const TaxReportView = () => {
           return (
             <SummaryRow
               key={virtualRow.key}
+              index={virtualRow.index}
+              measureElement={virtualizer.measureElement}
               report={yearlyReports[virtualRow.index]!}
               formatter={formatter}
               style={{
