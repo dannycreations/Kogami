@@ -6,6 +6,7 @@ import { CURRENCIES } from '../../app/constants';
 import { useSettingStore } from '../../stores/settingsStore';
 import { useTransactionStore } from '../../stores/transactionStore';
 import { VirtualTable } from '../shared/DataView';
+import { ImportCSVModal } from '../shared/ImportModal';
 
 import type { CurrencyCode } from '../../app/constants';
 import type { Transaction } from '../../stores/transactionStore';
@@ -86,158 +87,12 @@ const EditableRow = memo(
   },
 );
 
-const ImportCSVModal = memo(({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const [csvData, setCsvData] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const setTransactions = useTransactionStore((state) => state.setTransactions);
-  const existingTransactions = useTransactionStore((state) => state.transactions);
-
-  const handleImport = () => {
-    try {
-      setError(null);
-      const lines = csvData
-        .trim()
-        .split('\n')
-        .filter((line) => line.trim() !== '');
-
-      if (lines.length === 0) {
-        throw new Error('CSV is empty');
-      }
-
-      const firstLine = lines[0]!.toLowerCase();
-      const hasHeader = firstLine.includes('date') || firstLine.includes('description');
-      const dataLines = hasHeader ? lines.slice(1) : lines;
-
-      const newTransactions: Transaction[] = dataLines.map((line, index) => {
-        const parts = line.split(',').map((p) => p.trim());
-
-        if (parts.length < 5) {
-          throw new Error(`Line ${index + (hasHeader ? 2 : 1)}: Invalid number of columns. Expected at least 5.`);
-        }
-
-        const [date, description, category, currency, amount] = parts;
-
-        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-          throw new Error(`Line ${index + (hasHeader ? 2 : 1)}: Invalid date format. Expected YYYY-MM-DD.`);
-        }
-
-        const parsedAmount = parseFloat(amount || '0');
-
-        if (isNaN(parsedAmount)) {
-          throw new Error(`Line ${index + (hasHeader ? 2 : 1)}: Amount must be a number.`);
-        }
-
-        return {
-          id: crypto.randomUUID(),
-          date,
-          description: description || '',
-          category: category || '',
-          currency: (currency?.toUpperCase() as CurrencyCode) || 'USD',
-          amount: parsedAmount,
-        };
-      });
-
-      setTransactions([...newTransactions, ...existingTransactions]);
-      setCsvData('');
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error occurred');
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.csv') && !file.type.includes('csv') && !file.type.includes('text/plain')) {
-      setError('Please drop a CSV or text file.');
-      return;
-    }
-
-    try {
-      const text = await file.text();
-      setCsvData(text);
-      setError(null);
-    } catch (err) {
-      setError('Failed to read the file.');
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between p-4 border-b border-surface-100">
-          <div className="flex items-center space-x-2">
-            <Upload className="h-5 w-5 text-brand-600" />
-            <h2 className="text-sm font-bold text-surface-900 uppercase tracking-wider">Import CSV Transactions</h2>
-          </div>
-          <button onClick={onClose} className="p-1 hover:bg-surface-50 rounded-full transition-colors">
-            <X className="h-5 w-5 text-surface-400" />
-          </button>
-        </div>
-
-        <div className="p-6 flex-1 overflow-auto">
-          <p className="text-xs text-surface-500 mb-4 leading-relaxed">
-            Paste your CSV data below. Format:{' '}
-            <code className="bg-surface-100 px-1 rounded text-brand-700">Date,Description,Category,Currency,Amount</code>
-            <br />
-            Example: <code className="bg-surface-100 px-1 rounded text-surface-600">2024-01-01,Lunch,Food,USD,15.50</code>
-          </p>
-
-          <textarea
-            value={csvData}
-            onChange={(e) => setCsvData(e.target.value)}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            placeholder="2024-01-01,Lunch,Food,USD,15.50"
-            className={`w-full h-64 p-4 text-xs font-mono border rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none transition-all ${
-              isDragging ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500 ring-inset' : 'bg-surface-50 border-surface-200'
-            }`}
-          />
-
-          {error && <div className="mt-3 p-3 bg-red-50 border border-red-100 text-red-600 text-[11px] font-medium rounded">{error}</div>}
-        </div>
-
-        <div className="p-4 border-t border-surface-100 flex justify-end space-x-3 bg-surface-50/50 rounded-b-lg">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-surface-600 hover:text-surface-900 transition-colors uppercase tracking-wider"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleImport}
-            className="px-6 py-2 bg-brand-800 text-white rounded text-xs font-bold hover:bg-brand-900 transition-colors shadow-sm uppercase tracking-wider"
-          >
-            Import Transactions
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-});
-
 export const TransactionView = () => {
   const transactions = useTransactionStore((state) => state.transactions);
   const addTransaction = useTransactionStore((state) => state.addTransaction);
   const updateTransaction = useTransactionStore((state) => state.updateTransaction);
   const deleteTransaction = useTransactionStore((state) => state.deleteTransaction);
+  const setTransactions = useTransactionStore((state) => state.setTransactions);
 
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -337,7 +192,37 @@ export const TransactionView = () => {
         </div>
       </div>
 
-      <ImportCSVModal isOpen={isImportModalOpen} onClose={() => setIsImportModalOpen(false)} />
+      <ImportCSVModal<Transaction>
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onImport={(newTxs) => setTransactions([...newTxs, ...transactions])}
+        title="Import General Transactions"
+        template="Date,Description,Category,Currency,Amount"
+        example="2024-01-01,Lunch,Food,USD,15.50"
+        minColumns={5}
+        parseLine={(parts, lineIdx) => {
+          const [date, description, category, currency, amount] = parts;
+
+          if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+            throw new Error(`Line ${lineIdx}: Invalid date format. Expected YYYY-MM-DD.`);
+          }
+
+          const parsedAmount = parseFloat(amount || '0');
+
+          if (isNaN(parsedAmount)) {
+            throw new Error(`Line ${lineIdx}: Amount must be a number.`);
+          }
+
+          return {
+            id: crypto.randomUUID(),
+            date,
+            description: description || '',
+            category: category || '',
+            currency: (currency?.toUpperCase() as CurrencyCode) || 'USD',
+            amount: parsedAmount,
+          };
+        }}
+      />
 
       <VirtualTable
         count={virtualizer.getVirtualItems().length}

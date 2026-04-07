@@ -93,13 +93,18 @@ export const makeScraper = <T extends BaseRateEntry>(
       }
 
       if (!existing) {
+        // Exchange rates often have overlapping ranges (year vs week)
+        // Interest rates usually have exact year keys
         for (const key in store) {
           const data = store[key]!;
           if (date >= data.startDate && date <= data.endDate) {
-            fallback = data;
+            // Favor shorter ranges (week vs year) for exchange rates
+            if (!fallback || getDayDiff(data.startDate, data.endDate) < getDayDiff(fallback.startDate, fallback.endDate)) {
+              fallback = data;
+            }
             if (type === 'interest' || getDayDiff(data.startDate, data.endDate) <= 7 || date > today) {
               existing = data;
-              break;
+              if (type === 'interest' || getDayDiff(data.startDate, data.endDate) <= 7) break;
             }
           }
         }

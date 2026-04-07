@@ -223,22 +223,33 @@ export const TaxReportView = () => {
       if (lastLookup.current?.date === dateStr) {
         rates = lastLookup.current.rates;
       } else {
+        // Exact year match (most common)
         const yearStr = dateStr.substring(0, 4);
-        rates = exchangeMap.get(yearStr);
+        const yearEntry = exchangeRates[yearStr];
+        if (yearEntry && dateStr >= yearEntry.startDate && dateStr <= yearEntry.endDate) {
+          rates = exchangeMap.get(yearStr);
+        }
 
         if (!rates) {
+          // Binary search over overlapping ranges
           let low = 0;
           let high = sortedExchangeKeys.length - 1;
           while (low <= high) {
             const mid = (low + high) >>> 1;
             const key = sortedExchangeKeys[mid]!;
             const e = exchangeRates[key]!;
+
             if (dateStr >= e.startDate && dateStr <= e.endDate) {
               rates = exchangeMap.get(key);
               break;
             }
-            if (dateStr < e.startDate) low = mid + 1;
-            else high = mid - 1;
+
+            // Sorted by startDate DESC (newest first)
+            if (dateStr < e.startDate) {
+              low = mid + 1;
+            } else {
+              high = mid - 1;
+            }
           }
         }
         lastLookup.current = { date: dateStr, rates };
@@ -260,24 +271,29 @@ export const TaxReportView = () => {
   const yearlyReports = useMemo(() => {
     if (!transactions.length) return [];
 
-    const sortedTxs = transactions.filter((tx) => tx.date && tx.symbol);
-    if (sortedTxs.length === 0) return [];
+    // Store is already sorted by date DESC
+    const startYear = parseInt(transactions[transactions.length - 1]!.date.substring(0, 4), 10);
+    const endYear = Math.max(parseInt(transactions[0]!.date.substring(0, 4), 10), new Date().getFullYear());
 
-    const startYear = parseInt(sortedTxs[sortedTxs.length - 1]!.date.substring(0, 4), 10);
-    const endYear = Math.max(parseInt(sortedTxs[0]!.date.substring(0, 4), 10), new Date().getFullYear());
+    if (isNaN(startYear)) return [];
 
     const reportsArr: YearlyReport[] = [];
     const inventory = new Map<string, { items: InventoryItem[]; nextIdx: number }>();
 
-    let txIdx = sortedTxs.length - 1;
+    let txIdx = transactions.length - 1;
     for (let year = startYear; year <= endYear; year++) {
       let txsInYearCount = 0;
       let realizedProfit = 0;
       const profitBreakdownMap = new Map<string, number>();
 
-      while (txIdx >= 0 && parseInt(sortedTxs[txIdx]!.date.substring(0, 4), 10) === year) {
-        const tx = sortedTxs[txIdx]!;
+      while (txIdx >= 0) {
+        const tx = transactions[txIdx]!;
+        const txYear = parseInt(tx.date.substring(0, 4), 10);
+        if (txYear > year) break;
+
         txIdx--;
+        if (!tx.symbol || !tx.date) continue;
+
         txsInYearCount++;
         const rateToPreferred = getExchangeRate(tx.date, tx.currency, preferredCurrency);
         const { symbol, action } = tx;
@@ -320,7 +336,9 @@ export const TaxReportView = () => {
                 inv.items[inv.nextIdx] = { ...item, quantity: item.quantity - sellFromThisItem };
               }
             }
-            profitBreakdownMap.set(symbol, (profitBreakdownMap.get(symbol) || 0) + symbolProfit);
+            if (symbolProfit !== 0) {
+              profitBreakdownMap.set(symbol, (profitBreakdownMap.get(symbol) || 0) + symbolProfit);
+            }
           }
         }
       }
@@ -372,7 +390,7 @@ export const TaxReportView = () => {
       });
     }
 
-    return reportsArr.sort((a, b) => b.year - a.year);
+    return reportsArr.reverse();
   }, [transactions, exchangeRates, exchangeMap, sortedExchangeKeys, preferredCurrency, getExchangeRate]);
 
   const virtualizer = useVirtualizer({
