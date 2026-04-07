@@ -41,7 +41,7 @@ export const useInvestmentStore = create<InvestmentState>()(
       addTransaction: (transaction) => {
         const normalized = normalizeTransaction(transaction);
         set((state) => {
-          const next = [...state.transactions];
+          const next = state.transactions;
           let low = 0;
           let high = next.length - 1;
           let index = next.length;
@@ -56,35 +56,53 @@ export const useInvestmentStore = create<InvestmentState>()(
               low = mid + 1;
             }
           }
-          next.splice(index, 0, normalized);
-          return { transactions: next };
+
+          const updated = [...next];
+          updated.splice(index, 0, normalized);
+          return { transactions: updated };
         });
       },
       updateTransaction: (id, updates) =>
         set((state) => {
-          let changed = false;
-          let dateChanged = false;
-          const next = state.transactions.map((tx) => {
-            if (tx.id !== id) return tx;
-            const updated = normalizeTransaction({ ...tx, ...updates });
-            if (
-              updated.date !== tx.date ||
-              updated.symbol !== tx.symbol ||
-              updated.action !== tx.action ||
-              updated.quantity !== tx.quantity ||
-              updated.price !== tx.price ||
-              updated.currency !== tx.currency
-            ) {
-              changed = true;
-              if (updated.date !== tx.date) dateChanged = true;
-              return updated;
-            }
-            return tx;
-          });
-          if (!changed) return state;
-          if (dateChanged) {
-            next.sort(compareTransactions);
+          const index = state.transactions.findIndex((tx) => tx.id === id);
+          if (index === -1) return state;
+
+          const oldTx = state.transactions[index]!;
+          const updated = normalizeTransaction({ ...oldTx, ...updates });
+
+          if (
+            updated.date === oldTx.date &&
+            updated.symbol === oldTx.symbol &&
+            updated.action === oldTx.action &&
+            updated.quantity === oldTx.quantity &&
+            updated.price === oldTx.price &&
+            updated.currency === oldTx.currency
+          ) {
+            return state;
           }
+
+          const next = [...state.transactions];
+          if (updated.date === oldTx.date) {
+            next[index] = updated;
+            return { transactions: next };
+          }
+
+          next.splice(index, 1);
+          let low = 0;
+          let high = next.length - 1;
+          let insertIdx = next.length;
+
+          while (low <= high) {
+            const mid = (low + high) >>> 1;
+            const item = next[mid]!;
+            if (updated.date > item.date || (updated.date === item.date && updated.id >= item.id)) {
+              insertIdx = mid;
+              high = mid - 1;
+            } else {
+              low = mid + 1;
+            }
+          }
+          next.splice(insertIdx, 0, updated);
           return { transactions: next };
         }),
       deleteTransaction: (id) =>

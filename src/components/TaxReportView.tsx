@@ -211,28 +211,37 @@ export const TaxReportView = () => {
     return map;
   }, [exchangeRates]);
 
+  const lastLookup = useRef<{ date: string; rates: Map<string, number> | undefined } | null>(null);
+
   const getExchangeRate = useCallback(
     (dateStr: string, from: string, to: string): number => {
       if (from === to) return 1;
       if (!exchangeRates || !exchangeMap) return to === DEFAULT_CURRENCY ? 15000 : 1;
 
-      const yearStr = dateStr.substring(0, 4);
-      let rates = exchangeMap.get(yearStr);
+      let rates: Map<string, number> | undefined;
 
-      if (!rates) {
-        let low = 0;
-        let high = sortedExchangeKeys.length - 1;
-        while (low <= high) {
-          const mid = (low + high) >>> 1;
-          const key = sortedExchangeKeys[mid]!;
-          const e = exchangeRates[key]!;
-          if (dateStr >= e.startDate && dateStr <= e.endDate) {
-            rates = exchangeMap.get(key);
-            break;
+      if (lastLookup.current?.date === dateStr) {
+        rates = lastLookup.current.rates;
+      } else {
+        const yearStr = dateStr.substring(0, 4);
+        rates = exchangeMap.get(yearStr);
+
+        if (!rates) {
+          let low = 0;
+          let high = sortedExchangeKeys.length - 1;
+          while (low <= high) {
+            const mid = (low + high) >>> 1;
+            const key = sortedExchangeKeys[mid]!;
+            const e = exchangeRates[key]!;
+            if (dateStr >= e.startDate && dateStr <= e.endDate) {
+              rates = exchangeMap.get(key);
+              break;
+            }
+            if (dateStr < e.startDate) low = mid + 1;
+            else high = mid - 1;
           }
-          if (dateStr < e.startDate) low = mid + 1;
-          else high = mid - 1;
         }
+        lastLookup.current = { date: dateStr, rates };
       }
 
       if (rates) {
@@ -258,7 +267,7 @@ export const TaxReportView = () => {
     const endYear = Math.max(parseInt(sortedTxs[0]!.date.substring(0, 4), 10), new Date().getFullYear());
 
     const reportsArr: YearlyReport[] = [];
-    const inventory = new Map<string, InventoryItem[]>();
+    const inventory = new Map<string, { items: InventoryItem[]; nextIdx: number }>();
 
     let txIdx = sortedTxs.length - 1;
     for (let year = startYear; year <= endYear; year++) {
@@ -274,12 +283,12 @@ export const TaxReportView = () => {
         const { symbol, action } = tx;
 
         if (action === 'BUY') {
-          let symbolInv = inventory.get(symbol);
-          if (!symbolInv) {
-            symbolInv = [];
-            inventory.set(symbol, symbolInv);
+          let inv = inventory.get(symbol);
+          if (!inv) {
+            inv = { items: [], nextIdx: 0 };
+            inventory.set(symbol, inv);
           }
-          symbolInv.push({
+          inv.items.push({
             symbol,
             quantity: Math.abs(tx.quantity || 0),
             price: tx.price || 0,
@@ -289,12 +298,12 @@ export const TaxReportView = () => {
           });
         } else if (action === 'SELL') {
           let remainingToSell = Math.abs(tx.quantity || 0);
-          const symbolInv = inventory.get(symbol);
+          const inv = inventory.get(symbol);
 
-          if (symbolInv) {
+          if (inv) {
             let symbolProfit = 0;
-            while (remainingToSell > 0 && symbolInv.length > 0) {
-              const item = symbolInv[0]!;
+            while (remainingToSell > 0 && inv.nextIdx < inv.items.length) {
+              const item = inv.items[inv.nextIdx]!;
               const sellFromThisItem = Math.min(item.quantity, remainingToSell);
               const buyValuePreferred = sellFromThisItem * item.price * item.rateAtBuy;
               const sellValuePreferred = sellFromThisItem * (tx.price || 0) * rateToPreferred;
@@ -306,9 +315,9 @@ export const TaxReportView = () => {
               remainingToSell -= sellFromThisItem;
 
               if (Math.abs(item.quantity - sellFromThisItem) < 1e-10) {
-                symbolInv.shift();
+                inv.nextIdx++;
               } else {
-                symbolInv[0] = { ...item, quantity: item.quantity - sellFromThisItem };
+                inv.items[inv.nextIdx] = { ...item, quantity: item.quantity - sellFromThisItem };
               }
             }
             profitBreakdownMap.set(symbol, (profitBreakdownMap.get(symbol) || 0) + symbolProfit);
@@ -318,20 +327,21 @@ export const TaxReportView = () => {
 
       const currentHoldings: YearlyReport['holdings'] = [];
       let yearEndHoldingsValue = 0;
+      const yearEndRates = new Map<string, number>();
 
-      for (const [symbol, symbolInv] of inventory) {
-        if (symbolInv.length === 0) continue;
+      for (const [symbol, inv] of inventory) {
+        if (inv.nextIdx >= inv.items.length) continue;
 
         let totalQuantity = 0;
         let totalCostBasis = 0;
         let totalValuePreferred = 0;
-        const currencyRates = new Map<string, number>();
 
-        for (const item of symbolInv) {
-          let dec31Rate = currencyRates.get(item.currency);
+        for (let i = inv.nextIdx; i < inv.items.length; i++) {
+          const item = inv.items[i]!;
+          let dec31Rate = yearEndRates.get(item.currency);
           if (dec31Rate === undefined) {
             dec31Rate = getExchangeRate(`${year}-12-31`, item.currency, preferredCurrency);
-            currencyRates.set(item.currency, dec31Rate);
+            yearEndRates.set(item.currency, dec31Rate);
           }
 
           totalQuantity += item.quantity;

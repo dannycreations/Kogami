@@ -87,28 +87,17 @@ export const makeScraper = <T extends BaseRateEntry>(
       const yearEntry = store[yearStr];
       if (yearEntry && date >= yearEntry.startDate && date <= yearEntry.endDate) {
         fallback = yearEntry;
-        if (type === 'exchange') {
-          const duration = getDayDiff(yearEntry.startDate, yearEntry.endDate);
-          if (duration <= 7 || !(today >= yearEntry.startDate || date <= today)) {
-            existing = yearEntry;
-          }
-        } else {
+        if (type === 'interest' || getDayDiff(yearEntry.startDate, yearEntry.endDate) <= 7 || date > today) {
           existing = yearEntry;
         }
       }
 
       if (!existing) {
-        const entries = Object.values(store);
-        for (const data of entries) {
+        for (const key in store) {
+          const data = store[key]!;
           if (date >= data.startDate && date <= data.endDate) {
             fallback = data;
-            if (type === 'exchange') {
-              const duration = getDayDiff(data.startDate, data.endDate);
-              if (duration <= 7 || !(today >= data.startDate || date <= today)) {
-                existing = data;
-                break;
-              }
-            } else {
+            if (type === 'interest' || getDayDiff(data.startDate, data.endDate) <= 7 || date > today) {
               existing = data;
               break;
             }
@@ -143,15 +132,16 @@ export const makeScraper = <T extends BaseRateEntry>(
       if (type === 'exchange') {
         const duration = getDayDiff(data.startDate, data.endDate);
         if (duration <= 7) {
+          const start = data.startDate;
+          const end = data.endDate;
           for (const key in updatedStore) {
             const existingData = updatedStore[key]!;
-            if (
-              data.startDate >= existingData.startDate &&
-              data.endDate <= existingData.endDate &&
-              getDayDiff(existingData.startDate, existingData.endDate) > duration
-            ) {
-              yield* Effect.logInfo(`Removing redundant range: ${key}`);
-              delete updatedStore[key];
+            if (start >= existingData.startDate && end <= existingData.endDate) {
+              const existingDuration = getDayDiff(existingData.startDate, existingData.endDate);
+              if (existingDuration > duration) {
+                yield* Effect.logInfo(`Removing redundant range: ${key}`);
+                delete updatedStore[key];
+              }
             }
           }
         }

@@ -39,9 +39,12 @@ export const makeStoreManager = <T extends DataWithRange>(filePath: string) => {
         yield* fs.makeDirectory(dir, { recursive: true });
       }
 
+      // Sort keys to maintain predictable file structure and improve git diffs
+      const sortedStore = Object.fromEntries(Object.entries(store).sort(([a], [b]) => b.localeCompare(a)));
+
       // @effect-diagnostics-next-line globalErrorInEffectCatch:off
       const content = yield* Effect.try({
-        try: () => JSON.stringify(Object.fromEntries(Object.entries(store).sort(([a], [b]) => b.localeCompare(a)))),
+        try: () => JSON.stringify(sortedStore),
         // @effect-diagnostics-next-line globalErrorInEffectFailure:off
         catch: (e) => new Error(`JSON serialization failed: ${e}`),
       });
