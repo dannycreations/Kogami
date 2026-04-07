@@ -17,7 +17,7 @@ const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: 
   return (
     <div className="v-row flex items-stretch w-full" style={style}>
       <div className="v-cell border-r border-surface-100 p-0 flex items-center justify-center w-16 shrink-0">
-        <div className="inline-flex w-7 h-5 rounded-sm bg-surface-100 items-center justify-center text-[10px] font-bold text-surface-500 border border-surface-200 shadow-sm overflow-hidden">
+        <div className="inline-flex w-7 h-5 rounded-sm bg-surface-200 items-center justify-center text-[10px] font-bold text-surface-500 border border-surface-300 shadow-sm overflow-hidden">
           {entry.currency.substring(0, 2)}
         </div>
       </div>
@@ -106,11 +106,11 @@ export const ExchangeRateView = () => {
       />
 
       {error && (
-        <div className="bg-red-50 border-l-2 border-red-500 text-red-800 p-3 rounded-r text-sm flex items-start shadow-sm mt-4">
-          <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-600 shrink-0" />
+        <div className="bg-red-50 border-l-2 border-red-200 text-red-800 p-3 rounded-r text-[13px] flex items-start shadow-sm mt-4">
+          <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-500 shrink-0" />
           <div>
-            <p className="font-bold">Sync Error</p>
-            <p className="opacity-90 mt-0.5">{error}</p>
+            <p className="font-black uppercase tracking-tight text-[11px]">Sync Error</p>
+            <p className="mt-0.5 leading-tight">{error}</p>
           </div>
         </div>
       )}

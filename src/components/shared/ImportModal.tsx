@@ -100,7 +100,7 @@ export const ImportCSVModal = <T extends { id: string }>({
         <div className="card-header justify-between">
           <div className="flex items-center space-x-2">
             <Upload className="h-5 w-5 text-brand-600" />
-            <h2 className="text-sm font-bold text-surface-900 uppercase tracking-wider">{title}</h2>
+            <h2 className="label-caps-sm text-surface-900">{title}</h2>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-surface-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-surface-400" />
@@ -108,7 +108,7 @@ export const ImportCSVModal = <T extends { id: string }>({
         </div>
 
         <div className="p-6 flex-1 overflow-auto">
-          <p className="text-xs text-surface-500 mb-4 leading-relaxed">
+          <p className="text-[11px] text-surface-500 mb-4 leading-relaxed">
             Paste your CSV data below. Format: <code className="bg-surface-100 px-1 rounded text-brand-700">{template}</code>
             <br />
             Example: <code className="bg-surface-100 px-1 rounded text-surface-600">{example}</code>

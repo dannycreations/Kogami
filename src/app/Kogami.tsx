@@ -46,9 +46,9 @@ export const KogamiApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-surface-50 flex text-surface-900 font-sans">
+    <div className="min-h-screen flex text-surface-900">
       <aside className="w-56 bg-brand-50 border-r border-surface-200 flex flex-col fixed inset-y-0 left-0 z-50">
-        <div className="p-5 border-b border-surface-200 bg-brand-50">
+        <div className="p-5 border-b border-surface-200">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 bg-brand-800 rounded flex items-center justify-center shadow-sm">
               <Fingerprint className="h-5 w-5 text-white" strokeWidth={1.5} />
@@ -109,12 +109,10 @@ export const KogamiApp = () => {
 
       <main className="ml-56 flex-1 flex flex-col min-h-screen relative">
         <header className="h-14 bg-white/80 backdrop-blur-md border-b border-surface-200 px-6 flex items-center justify-between sticky top-0 z-40">
-          <div className="flex items-center">
-            <h1 className="text-base font-semibold text-surface-800 capitalize">{activeTab.replace('-', ' ')}</h1>
-          </div>
+          <h1 className="text-base font-semibold text-surface-800 capitalize">{activeTab.replace('-', ' ')}</h1>
         </header>
 
-        <div className="flex-1 p-6 w-full">
+        <div className="flex-1 p-6 w-full overflow-hidden">
           {activeTab === 'exchange-rates' ? (
             <ExchangeRateView />
           ) : activeTab === 'interest-rates' ? (

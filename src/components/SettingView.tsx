@@ -12,12 +12,12 @@ export const SettingView = () => {
       <div className="card">
         <div className="card-header">
           <Globe className="h-4 w-4 text-brand-600" />
-          <h2 className="text-xs font-bold text-surface-900 uppercase tracking-wider">Regional Settings</h2>
+          <h2 className="label-caps-sm text-surface-900">Regional Settings</h2>
         </div>
         <div className="card-body space-y-6">
           <div className="flex flex-col space-y-2">
             <label className="text-sm font-bold text-surface-800">Preferred Currency</label>
-            <p className="text-xs text-surface-500 mb-2">Select the currency used for all calculations and reports.</p>
+            <p className="text-[11px] text-surface-500 mb-2">Select the currency used for all calculations and reports.</p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {CURRENCIES.map((currency) => (
                 <button

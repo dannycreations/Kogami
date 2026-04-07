@@ -63,10 +63,10 @@ export const FilterBar = memo(
       </div>
 
       {isValid && (
-        <div className="ml-auto flex items-center px-3 py-1.5 bg-brand-50 border border-brand-100 rounded text-xs">
+        <div className="ml-auto flex items-center px-3 py-1.5 bg-brand-50/50 border border-brand-100 rounded text-xs">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2"></div>
           {period && (
-            <span className="text-surface-500 font-mono">
+            <span className="text-surface-600 font-mono">
               Period: {period.startDate} &mdash; {period.endDate}
             </span>
           )}
@@ -108,10 +108,7 @@ export const VirtualTable = memo(
       <div className="table-container flex-1 flex flex-col min-h-0 mt-3.5">
         <div className="flex flex-col w-full text-left border-collapse relative h-full overflow-hidden">
           {/* Synchronized Header */}
-          <div
-            ref={headerRef}
-            className="overflow-hidden bg-surface-50 border-b border-surface-200 shrink-0 z-20 shadow-sm pr-[var(--scrollbar-width,0px)]"
-          >
+          <div ref={headerRef} className="overflow-hidden bg-surface-50 border-b border-surface-200 shrink-0 z-20 pr-[var(--scrollbar-width,0px)]">
             <div className="min-w-full w-max flex table-header border-none">{headers}</div>
           </div>
 
@@ -141,10 +138,10 @@ export const VirtualTable = memo(
               >
                 {loading ? (
                   <div className="px-4 py-16 text-center w-full">
-                    <div className="inline-flex items-center justify-center p-3 rounded-full bg-brand-50 mb-3">
-                      <RefreshCw className="h-5 w-5 text-brand-500 animate-spin" />
+                    <div className="inline-flex items-center justify-center p-3 rounded-full bg-brand-50 mb-3 border border-brand-100 shadow-sm">
+                      <RefreshCw className="h-5 w-5 text-brand-600 animate-spin" />
                     </div>
-                    <p className="text-sm font-medium text-surface-600">Querying central database...</p>
+                    <p className="text-sm font-bold text-surface-600">Processing data...</p>
                   </div>
                 ) : count > 0 ? (
                   Array.from({ length: count }).map((_, index) => renderRow(index))

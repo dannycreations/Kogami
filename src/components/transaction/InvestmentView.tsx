@@ -30,7 +30,7 @@ const EditableRow = memo(
             type="date"
             value={transaction.date}
             onChange={(e) => onUpdate(transaction.id, { date: e.target.value })}
-            className="compact-input w-full h-7 !px-2 font-mono"
+            className="compact-input w-full h-7 !px-2 font-mono text-[13px]"
           />
         </div>
         <div className="v-cell border-r border-surface-100 p-1 w-24 shrink-0 flex items-center justify-center">
@@ -66,7 +66,7 @@ const EditableRow = memo(
           <select
             value={transaction.currency}
             onChange={(e) => onUpdate(transaction.id, { currency: e.target.value as CurrencyCode })}
-            className="compact-input w-full h-7 !px-1 text-[9px] font-mono font-bold cursor-pointer appearance-auto"
+            className="compact-input w-full h-7 !px-1 text-[9px] font-mono font-black cursor-pointer appearance-auto uppercase bg-white border-surface-200"
           >
             {CURRENCIES.map((currency) => (
               <option key={currency.code} value={currency.code}>
@@ -181,23 +181,23 @@ export const InvestmentView = () => {
         </div>
 
         <div className="flex space-x-2">
-          <button onClick={addRow} className="compact-button bg-brand-800 text-white hover:bg-brand-900 space-x-2 shadow-sm">
+          <button onClick={addRow} className="compact-button bg-brand-800 text-white hover:bg-brand-900 space-x-2 shadow-sm !h-9">
             <Plus className="h-3.5 w-3.5" />
-            <span>Add Transaction</span>
+            <span className="font-bold uppercase tracking-wider text-[11px]">Add Transaction</span>
           </button>
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="compact-button bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 space-x-2 shadow-sm"
+            className="compact-button bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 space-x-2 shadow-sm !h-9"
           >
             <Upload className="h-3.5 w-3.5" />
-            <span>Import CSV</span>
+            <span className="font-bold uppercase tracking-wider text-[11px]">Import CSV</span>
           </button>
           <button
             onClick={exportCSV}
-            className="compact-button bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 space-x-2 shadow-sm"
+            className="compact-button bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 space-x-2 shadow-sm !h-9"
           >
             <Download className="h-3.5 w-3.5" />
-            <span>Export CSV</span>
+            <span className="font-bold uppercase tracking-wider text-[11px]">Export CSV</span>
           </button>
         </div>
       </div>

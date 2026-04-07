@@ -96,11 +96,11 @@ export const InterestRateView = () => {
       />
 
       {error && (
-        <div className="bg-red-50 border-l-2 border-red-500 text-red-800 p-3 rounded-r text-sm flex items-start shadow-sm mt-4">
-          <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-600 shrink-0" />
+        <div className="bg-red-50 border-l-2 border-red-200 text-red-800 p-3 rounded-r text-[13px] flex items-start shadow-sm mt-4">
+          <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-500 shrink-0" />
           <div>
-            <p className="font-bold">Sync Error</p>
-            <p className="opacity-90 mt-0.5">{error}</p>
+            <p className="font-black uppercase tracking-tight text-[11px]">Sync Error</p>
+            <p className="mt-0.5 leading-tight">{error}</p>
           </div>
         </div>
       )}

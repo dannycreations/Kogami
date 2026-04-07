@@ -59,19 +59,19 @@ const SummaryRow = memo(
     return (
       <div ref={rowRef} data-index={index} className="flex flex-col w-full border-b border-surface-100 bg-white" style={style}>
         <div
-          className={`flex items-stretch w-full hover:bg-surface-50 transition-colors cursor-pointer min-h-[72px] ${isExpanded ? 'bg-surface-50' : ''}`}
+          className={`flex items-stretch w-full hover:bg-brand-50/50 transition-colors cursor-pointer min-h-[72px] ${isExpanded ? 'bg-brand-50/50' : ''}`}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           <div className="flex items-center justify-center w-24 shrink-0 border-r border-surface-100 bg-surface-50/30">
             <div className="flex flex-col items-center">
               <span className="text-sm font-black text-surface-900 tracking-tight">{report.year}</span>
-              <span className="text-[9px] font-bold text-surface-400 uppercase">{report.transactionsCount} txs</span>
+              <span className="label-caps">{report.transactionsCount} txs</span>
             </div>
           </div>
 
           <div className="flex-1 flex items-center px-6">
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-surface-400 uppercase tracking-wider mb-0.5">Realized Gain/Loss</span>
+              <span className="label-caps mb-0.5">Realized Gain/Loss</span>
               <div className="flex items-center space-x-2">
                 {report.realizedProfit >= 0 ? <TrendingUp className="h-3 w-3 text-emerald-500" /> : <TrendingDown className="h-3 w-3 text-red-500" />}
                 <span className={`font-mono text-sm font-bold ${report.realizedProfit >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
@@ -83,7 +83,7 @@ const SummaryRow = memo(
 
           <div className="flex-1 flex items-center px-6 border-l border-surface-100/50">
             <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-surface-400 uppercase tracking-wider mb-0.5">Holdings (Dec 31)</span>
+              <span className="label-caps mb-0.5">Holdings (Dec 31)</span>
               <div className="flex items-center space-x-2">
                 <DollarSign className="h-3 w-3 text-brand-400" />
                 <span className="font-mono text-sm font-bold text-surface-900">{formatter.format(report.holdingsValue)}</span>
@@ -99,7 +99,7 @@ const SummaryRow = memo(
         </div>
 
         {isExpanded && (
-          <div className="bg-white border-t border-surface-100 grid grid-cols-1 md:grid-cols-2 gap-px bg-surface-100">
+          <div className="bg-white border-t border-surface-100 grid grid-cols-1 md:grid-cols-2 gap-px bg-surface-100 overflow-hidden">
             <div className="bg-white p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="label-caps-sm">Profit Breakdown</h3>
@@ -109,7 +109,7 @@ const SummaryRow = memo(
                 {report.profitBreakdown.map((p) => (
                   <div key={p.symbol} className="flex items-center justify-between group">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded bg-surface-50 flex items-center justify-center text-[10px] font-bold text-surface-600 border border-surface-100 group-hover:border-brand-200 group-hover:bg-brand-50 transition-colors">
+                      <div className="w-8 h-8 rounded bg-surface-100 flex items-center justify-center text-[10px] font-bold text-surface-600 border border-surface-200 group-hover:border-brand-200 group-hover:bg-brand-50 transition-colors">
                         {p.symbol.substring(0, 2)}
                       </div>
                       <span className="text-xs font-bold text-surface-800">{p.symbol}</span>
@@ -121,9 +121,9 @@ const SummaryRow = memo(
                   </div>
                 ))}
                 {report.profitBreakdown.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-6 text-surface-300">
+                  <div className="flex flex-col items-center justify-center py-6 text-surface-400">
                     <Calculator className="h-6 w-6 mb-2 opacity-20" />
-                    <p className="text-[10px] font-medium uppercase tracking-widest">No realized profit</p>
+                    <p className="label-caps">No realized profit</p>
                   </div>
                 )}
               </div>
@@ -138,7 +138,7 @@ const SummaryRow = memo(
                 {report.holdings.map((h) => (
                   <div key={h.symbol} className="flex items-center justify-between group">
                     <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 rounded bg-surface-50 flex items-center justify-center text-[10px] font-bold text-surface-600 border border-surface-100 group-hover:border-brand-200 group-hover:bg-brand-50 transition-colors">
+                      <div className="w-8 h-8 rounded bg-surface-100 flex items-center justify-center text-[10px] font-bold text-surface-600 border border-surface-200 group-hover:border-brand-200 group-hover:bg-brand-50 transition-colors">
                         {h.symbol.substring(0, 2)}
                       </div>
                       <div className="flex flex-col">
@@ -146,16 +146,16 @@ const SummaryRow = memo(
                         <span className="text-[10px] font-mono text-surface-400 leading-none">{h.quantity.toLocaleString()} units</span>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end">
+                    <div className="flex flex-col items-end text-right">
                       <span className="font-mono text-xs font-bold text-brand-900">{formatter.format(h.valuePreferredAtDec31)}</span>
-                      <span className="text-[9px] font-bold text-surface-400 uppercase leading-none mt-0.5">Market Value</span>
+                      <span className="label-caps leading-none mt-0.5">Market Value</span>
                     </div>
                   </div>
                 ))}
                 {report.holdings.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-6 text-surface-300">
+                  <div className="flex flex-col items-center justify-center py-6 text-surface-400">
                     <TrendingDown className="h-6 w-6 mb-2 opacity-20" />
-                    <p className="text-[10px] font-medium uppercase tracking-widest">Zero inventory</p>
+                    <p className="label-caps">Zero inventory</p>
                   </div>
                 )}
               </div>
@@ -427,9 +427,9 @@ export const TaxReportView = () => {
                 </span>
               )}
             </div>
-            <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
-              <div className="w-1 h-1 rounded-full bg-surface-200 mr-2" />
-              Cumulative across all years
+            <div className="mt-2 flex items-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2" />
+              <span className="label-caps">Cumulative across all years</span>
             </div>
           </div>
         </div>
@@ -452,9 +452,9 @@ export const TaxReportView = () => {
                 <span className="text-2xl font-black tracking-tight">{formatter.format(currentHoldingsValue)}</span>
               )}
             </div>
-            <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
-              <div className="w-1 h-1 rounded-full bg-brand-200 mr-2" />
-              Current year-end inventory
+            <div className="mt-2 flex items-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-brand-500 mr-2" />
+              <span className="label-caps">Current year-end inventory</span>
             </div>
           </div>
         </div>
@@ -476,18 +476,18 @@ export const TaxReportView = () => {
               ) : (
                 <>
                   <span className="text-2xl font-black tracking-tight">{yearlyReports.length}</span>
-                  <span className="text-sm font-bold text-surface-400 uppercase">Fiscal Years</span>
+                  <span className="label-caps text-surface-400">Fiscal Years</span>
                 </>
               )}
             </div>
-            <div className="mt-2 text-[10px] font-bold text-surface-400 uppercase tracking-wider flex items-center">
-              <div className="w-1 h-1 rounded-full bg-surface-300 mr-2" />
+            <div className="mt-2 flex items-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-surface-300 mr-2" />
               {!exchangeRates ? (
                 <div className="h-3 w-24 bg-surface-100 animate-pulse rounded" />
               ) : (
-                <>
+                <span className="label-caps text-surface-500">
                   From {yearlyReports[yearlyReports.length - 1]?.year} to {yearlyReports[0]?.year}
-                </>
+                </span>
               )}
             </div>
           </div>
