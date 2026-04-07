@@ -121,7 +121,7 @@ export const ImportCSVModal = <T extends { id: string }>({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             placeholder={example}
-            className={`w-full h-64 p-4 text-xs font-mono border rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none transition-all ${
+            className={`w-full h-64 p-4 text-xs font-mono border rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none resize-none transition-all placeholder-input ${
               isDragging ? 'bg-brand-50 border-brand-500 ring-2 ring-brand-500 ring-inset' : 'bg-surface-50 border-surface-200'
             }`}
           />

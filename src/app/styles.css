@@ -41,11 +41,20 @@
   body {
     @apply font-sans text-surface-900 bg-surface-50 antialiased selection:bg-brand-200 selection:text-brand-950;
   }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply placeholder-input;
+  }
 }
 
 @layer utilities {
+  .placeholder-input {
+    @apply placeholder-surface-400 focus:placeholder-surface-300 placeholder-opacity-100 placeholder-font-normal;
+  }
+
   .compact-input {
-    @apply h-8 px-3 py-1 text-sm border border-surface-200 bg-white rounded transition-colors focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none;
+    @apply h-8 px-3 py-1 text-sm border border-surface-200 bg-white rounded transition-colors focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none placeholder-input;
   }
 
   .compact-button {
