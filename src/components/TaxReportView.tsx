@@ -475,7 +475,7 @@ export const TaxReportView = () => {
         headers={
           <>
             <div className="px-4 py-3 w-24 text-center border-r border-surface-200 bg-surface-50 shrink-0 flex items-center justify-center font-black text-[10px] uppercase tracking-widest text-surface-500">
-              Fiscal Year
+              Year
             </div>
             <div className="px-6 py-3 border-r border-surface-200 bg-surface-50 flex-1 flex items-center font-black text-[10px] uppercase tracking-widest text-surface-500">
               Net Gain/Loss
@@ -507,12 +507,6 @@ export const TaxReportView = () => {
             />
           );
         }}
-        footer={
-          <>
-            <span>Yearly Tax Reports</span>
-            <span>FIFO Method | Dec 31 Rates for Holdings</span>
-          </>
-        }
       />
     </div>
   );

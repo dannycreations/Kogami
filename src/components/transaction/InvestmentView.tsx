@@ -24,47 +24,47 @@ const EditableRow = memo(
   }) => {
     return (
       <div className="v-row flex items-stretch w-full hover:bg-surface-50 transition-colors border-b border-surface-100" style={style}>
-        <div className="v-cell border-r border-surface-100 p-0 flex items-center justify-center w-40 shrink-0">
+        <div className="v-cell border-r border-surface-100 p-1 flex items-center justify-center w-40 shrink-0">
           <input
             type="date"
             value={transaction.date}
             onChange={(e) => onUpdate(transaction.id, { date: e.target.value })}
-            className="w-full h-full px-3 py-2 bg-transparent border-none focus:ring-2 focus:ring-brand-500 text-xs font-mono"
+            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono transition-all"
           />
         </div>
-        <div className="v-cell border-r border-surface-100 p-0 w-24 shrink-0 flex items-center justify-center bg-white">
+        <div className="v-cell border-r border-surface-100 p-1 w-24 shrink-0 flex items-center justify-center bg-white">
           <select
             value={transaction.action}
             onChange={(e) => onUpdate(transaction.id, { action: e.target.value as InvestmentTransaction['action'] })}
-            className="w-full mx-1 h-7 px-0.5 text-surface-900 text-[9px] font-bold uppercase cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto"
+            className="w-full h-7 px-1 text-surface-900 text-[9px] font-bold uppercase cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
           >
             <option value="BUY">BUY</option>
             <option value="SELL">SELL</option>
           </select>
         </div>
-        <div className="v-cell border-r border-surface-100 p-0 flex-1 flex items-center min-w-[120px]">
+        <div className="v-cell border-r border-surface-100 p-1 flex-1 flex items-center min-w-[120px]">
           <input
             type="text"
             value={transaction.symbol}
             placeholder="Symbol (e.g. AAPL)"
             onChange={(e) => onUpdate(transaction.id, { symbol: e.target.value })}
-            className="w-full h-full px-3 py-2 bg-transparent border-none focus:ring-2 focus:ring-brand-500 text-xs font-bold text-brand-900"
+            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-bold text-brand-900 transition-all"
           />
         </div>
-        <div className="v-cell border-r border-surface-100 p-0 flex-1 flex items-center min-w-[120px]">
+        <div className="v-cell border-r border-surface-100 p-1 flex-1 flex items-center min-w-[120px]">
           <input
             type="number"
             step="any"
             value={transaction.quantity}
             onChange={(e) => onUpdate(transaction.id, { quantity: parseFloat(e.target.value) || 0 })}
-            className="w-full h-full px-3 py-2 bg-transparent border-none focus:ring-2 focus:ring-brand-500 text-xs font-mono text-right"
+            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all"
           />
         </div>
-        <div className="v-cell border-r border-surface-100 p-0 w-24 shrink-0 flex items-center justify-center bg-white">
+        <div className="v-cell border-r border-surface-100 p-1 w-24 shrink-0 flex items-center justify-center bg-white">
           <select
             value={transaction.currency}
             onChange={(e) => onUpdate(transaction.id, { currency: e.target.value as CurrencyCode })}
-            className="w-full mx-1 h-7 px-0.5 text-surface-900 text-[9px] font-mono font-bold cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto"
+            className="w-full h-7 px-1 text-surface-900 text-[9px] font-mono font-bold cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
           >
             {CURRENCIES.map((currency) => (
               <option key={currency.code} value={currency.code}>
@@ -73,13 +73,13 @@ const EditableRow = memo(
             ))}
           </select>
         </div>
-        <div className="v-cell border-r border-surface-100 p-0 flex-1 flex items-center min-w-[120px]">
+        <div className="v-cell border-r border-surface-100 p-1 flex-1 flex items-center min-w-[120px]">
           <input
             type="number"
             step="any"
             value={transaction.price}
             onChange={(e) => onUpdate(transaction.id, { price: parseFloat(e.target.value) || 0 })}
-            className="w-full h-full px-3 py-2 bg-transparent border-none focus:ring-2 focus:ring-brand-500 text-xs font-mono text-right"
+            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all"
           />
         </div>
         <div className="v-cell p-0 w-16 shrink-0 flex items-center justify-center">
