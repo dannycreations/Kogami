@@ -20,11 +20,13 @@ import { InterestRateView } from '../components/rate/InterestRateView';
 import { SettingView } from '../components/SettingView';
 import { TaxReportView } from '../components/TaxReportView';
 import { InvestmentView } from '../components/transaction/InvestmentView';
+import { TransactionView } from '../components/transaction/TransactionView';
 
 const NAV_LIST = [
   { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
   { id: 'transactions', name: 'Transactions', icon: ArrowRightLeft, isCategory: true },
-  { id: 'investment', name: 'Investments', icon: FileSpreadsheet, parentId: 'transactions' },
+  { id: 'general-transactions', name: 'General', icon: Banknote, parentId: 'transactions' },
+  { id: 'investment-transactions', name: 'Investments', icon: FileSpreadsheet, parentId: 'transactions' },
   { id: 'rates', name: 'Rates', icon: TrendingUp, isCategory: true },
   { id: 'exchange-rates', name: 'Exchange Rates', icon: Calculator, parentId: 'rates' },
   { id: 'interest-rates', name: 'Interest Rates', icon: Banknote, parentId: 'rates' },
@@ -117,7 +119,9 @@ export const KogamiApp = () => {
             <ExchangeRateView />
           ) : activeTab === 'interest-rates' ? (
             <InterestRateView />
-          ) : activeTab === 'investment' ? (
+          ) : activeTab === 'general-transactions' ? (
+            <TransactionView />
+          ) : activeTab === 'investment-transactions' ? (
             <InvestmentView />
           ) : activeTab === 'reports' ? (
             <TaxReportView />
