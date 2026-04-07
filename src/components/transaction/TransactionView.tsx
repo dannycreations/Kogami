@@ -30,13 +30,13 @@ const EditableRow = memo(
             type="date"
             value={transaction.date}
             onChange={(e) => onUpdate(transaction.id, { date: e.target.value })}
-            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono transition-all"
+            className="compact-input w-full h-7 !px-2 font-mono"
           />
         </div>
         <div className="v-cell border-r border-surface-100 p-1 w-20 shrink-0 flex items-center justify-center">
           <button
             onClick={() => onUpdate(transaction.id, { action: transaction.action === 'IN' ? 'OUT' : 'IN' })}
-            className={`w-full h-7 text-[10px] font-black rounded border transition-all ${transaction.action === 'IN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}`}
+            className={`w-full h-7 text-[10px] font-black rounded border transition-all ${transaction.action === 'IN' ? 'badge-emerald hover:bg-emerald-100' : 'badge-red hover:bg-red-100'}`}
           >
             {transaction.action}
           </button>
@@ -47,7 +47,7 @@ const EditableRow = memo(
             value={transaction.description}
             placeholder="Description"
             onChange={(e) => onUpdate(transaction.id, { description: e.target.value })}
-            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-medium text-surface-900 transition-all"
+            className="compact-input w-full h-7 !px-2 font-medium text-surface-900"
           />
         </div>
         <div className="v-cell border-r border-surface-100 p-1 flex-1 flex items-center min-w-[150px]">
@@ -56,14 +56,14 @@ const EditableRow = memo(
             value={transaction.category}
             placeholder="Category"
             onChange={(e) => onUpdate(transaction.id, { category: e.target.value })}
-            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs text-surface-600 transition-all"
+            className="compact-input w-full h-7 !px-2 text-surface-600"
           />
         </div>
         <div className="v-cell border-r border-surface-100 p-1 w-24 shrink-0 flex items-center justify-center bg-white">
           <select
             value={transaction.currency}
             onChange={(e) => onUpdate(transaction.id, { currency: e.target.value as CurrencyCode })}
-            className="w-full h-7 px-1 text-surface-900 text-[9px] font-mono font-bold cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+            className="compact-input w-full h-7 !px-1 text-[9px] font-mono font-bold cursor-pointer appearance-auto"
           >
             {CURRENCIES.map((currency) => (
               <option key={currency.code} value={currency.code}>
@@ -79,9 +79,7 @@ const EditableRow = memo(
             min="0"
             value={transaction.amount}
             onChange={(e) => onUpdate(transaction.id, { amount: Math.abs(parseFloat(e.target.value) || 0) })}
-            className={`w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all ${
-              transaction.action === 'IN' ? 'text-emerald-700' : 'text-red-600'
-            }`}
+            className={`compact-input w-full h-7 !px-2 font-mono text-right ${transaction.action === 'IN' ? 'text-emerald-700' : 'text-red-600'}`}
           />
         </div>
         <div className="v-cell p-0 w-16 shrink-0 flex items-center justify-center">
@@ -156,17 +154,17 @@ export const TransactionView = () => {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
+    <div className="view-container">
       <div className="flex items-center justify-between mb-2 gap-4">
         <div className="flex items-center space-x-3 flex-1">
           <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-surface-400" />
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-surface-400 z-10" />
             <input
               type="text"
-              placeholder="Filter transactions (desc, cat, date, etc.)..."
+              placeholder="desc, cat, date, etc..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-8 py-1.5 bg-white border border-surface-200 rounded text-xs focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all"
+              className="compact-input w-full !pl-8 !pr-8 !h-9 !rounded"
             />
             {searchQuery && (
               <button
@@ -180,23 +178,20 @@ export const TransactionView = () => {
         </div>
 
         <div className="flex space-x-2">
-          <button
-            onClick={addRow}
-            className="flex items-center space-x-2 bg-brand-800 text-white px-3 py-1.5 rounded text-xs font-semibold hover:bg-brand-900 transition-colors shadow-sm"
-          >
+          <button onClick={addRow} className="compact-button bg-brand-800 text-white hover:bg-brand-900 space-x-2 shadow-sm">
             <Plus className="h-3.5 w-3.5" />
             <span>Add Transaction</span>
           </button>
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="flex items-center space-x-2 bg-white border border-surface-200 text-surface-700 px-3 py-1.5 rounded text-xs font-semibold hover:bg-surface-50 transition-colors shadow-sm"
+            className="compact-button bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 space-x-2 shadow-sm"
           >
             <Upload className="h-3.5 w-3.5" />
             <span>Import CSV</span>
           </button>
           <button
             onClick={exportCSV}
-            className="flex items-center space-x-2 bg-white border border-surface-200 text-surface-700 px-3 py-1.5 rounded text-xs font-semibold hover:bg-surface-50 transition-colors shadow-sm"
+            className="compact-button bg-white border border-surface-200 text-surface-700 hover:bg-surface-50 space-x-2 shadow-sm"
           >
             <Download className="h-3.5 w-3.5" />
             <span>Export CSV</span>
@@ -258,27 +253,13 @@ export const TransactionView = () => {
         hasData={filteredTransactions.length > 0}
         headers={
           <>
-            <div className="px-4 py-2 w-40 text-center border-r border-surface-200 bg-surface-50 shrink-0 font-bold text-[10px] uppercase text-surface-500">
-              Date
-            </div>
-            <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 w-20 shrink-0 font-bold text-[10px] uppercase text-surface-500 text-center">
-              Action
-            </div>
-            <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 flex-1 min-w-[200px] font-bold text-[10px] uppercase text-surface-500">
-              Description
-            </div>
-            <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 flex-1 min-w-[150px] font-bold text-[10px] uppercase text-surface-500">
-              Category
-            </div>
-            <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 w-24 shrink-0 font-bold text-[10px] uppercase text-surface-500">
-              Currency
-            </div>
-            <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 flex-1 min-w-[120px] font-bold text-[10px] uppercase text-surface-500">
-              Amount
-            </div>
-            <div className="px-4 py-2 bg-surface-50 w-16 shrink-0 flex items-center justify-center font-bold text-[10px] uppercase text-surface-500">
-              Edit
-            </div>
+            <div className="table-header-cell w-40 justify-center">Date</div>
+            <div className="table-header-cell w-20 justify-center">Action</div>
+            <div className="table-header-cell flex-1 min-w-[200px]">Description</div>
+            <div className="table-header-cell flex-1 min-w-[150px]">Category</div>
+            <div className="table-header-cell w-24">Currency</div>
+            <div className="table-header-cell flex-1 min-w-[120px]">Amount</div>
+            <div className="table-header-cell w-16 justify-center">Edit</div>
           </>
         }
         renderRow={(index) => {

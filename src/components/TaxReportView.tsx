@@ -102,7 +102,7 @@ const SummaryRow = memo(
           <div className="bg-white border-t border-surface-100 grid grid-cols-1 md:grid-cols-2 gap-px bg-surface-100">
             <div className="bg-white p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em]">Profit Breakdown</h3>
+                <h3 className="label-caps-sm">Profit Breakdown</h3>
                 <div className="h-px flex-1 mx-4 bg-surface-100" />
               </div>
               <div className="space-y-2.5">
@@ -131,7 +131,7 @@ const SummaryRow = memo(
 
             <div className="bg-white p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-[10px] font-black text-surface-400 uppercase tracking-[0.2em]">Year-End Inventory</h3>
+                <h3 className="label-caps-sm">Year-End Inventory</h3>
                 <div className="h-px flex-1 mx-4 bg-surface-100" />
               </div>
               <div className="space-y-2.5">
@@ -405,9 +405,9 @@ export const TaxReportView = () => {
   const currentHoldingsValue = yearlyReports.length > 0 ? yearlyReports[0]!.holdingsValue : 0;
 
   return (
-    <div className="flex flex-col h-full space-y-4 max-h-[calc(100vh-7rem)]">
+    <div className="view-container">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm relative overflow-hidden group">
+        <div className="card relative p-6 group">
           <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
             <TrendingUp className="h-16 w-16 text-emerald-900" />
           </div>
@@ -416,7 +416,7 @@ export const TaxReportView = () => {
               <div className="p-1.5 bg-emerald-50 rounded-lg">
                 <TrendingUp className="h-4 w-4 text-emerald-600" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Total Realized Profit</span>
+              <span className="label-caps-sm">Total Realized Profit</span>
             </div>
             <div className="flex items-baseline space-x-1">
               {!exchangeRates ? (
@@ -434,7 +434,7 @@ export const TaxReportView = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm relative overflow-hidden group">
+        <div className="card relative p-6 group">
           <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
             <DollarSign className="h-16 w-16 text-brand-900" />
           </div>
@@ -443,7 +443,7 @@ export const TaxReportView = () => {
               <div className="p-1.5 bg-brand-50 rounded-lg">
                 <DollarSign className="h-4 w-4 text-brand-600" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Portfolio Value</span>
+              <span className="label-caps-sm">Portfolio Value</span>
             </div>
             <div className="flex items-baseline space-x-1 text-surface-900">
               {!exchangeRates ? (
@@ -459,7 +459,7 @@ export const TaxReportView = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-surface-200 shadow-sm relative overflow-hidden group">
+        <div className="card relative p-6 group">
           <div className="absolute top-0 right-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
             <Calculator className="h-16 w-16 text-surface-900" />
           </div>
@@ -468,7 +468,7 @@ export const TaxReportView = () => {
               <div className="p-1.5 bg-surface-100 rounded-lg">
                 <Calculator className="h-4 w-4 text-surface-600" />
               </div>
-              <span className="text-[10px] font-black uppercase tracking-[0.15em] text-surface-400">Reporting Range</span>
+              <span className="label-caps-sm">Reporting Range</span>
             </div>
             <div className="flex items-baseline space-x-2 text-surface-900">
               {!exchangeRates ? (
@@ -502,18 +502,10 @@ export const TaxReportView = () => {
         hasData={yearlyReports.length > 0}
         headers={
           <>
-            <div className="px-4 py-3 w-24 text-center border-r border-surface-200 bg-surface-50 shrink-0 flex items-center justify-center font-black text-[10px] uppercase tracking-widest text-surface-500">
-              Year
-            </div>
-            <div className="px-6 py-3 border-r border-surface-200 bg-surface-50 flex-1 flex items-center font-black text-[10px] uppercase tracking-widest text-surface-500">
-              Net Gain/Loss
-            </div>
-            <div className="px-6 py-3 border-r border-surface-200 bg-surface-50 flex-1 flex items-center font-black text-[10px] uppercase tracking-widest text-surface-500">
-              Year-End Assets
-            </div>
-            <div className="px-4 py-3 text-center text-surface-400 font-black text-[10px] uppercase tracking-widest bg-surface-50 w-12 shrink-0 flex items-center justify-center">
-              -
-            </div>
+            <div className="table-header-cell w-24 justify-center">Year</div>
+            <div className="table-header-cell flex-1 px-6">Net Gain/Loss</div>
+            <div className="table-header-cell flex-1 px-6">Year-End Assets</div>
+            <div className="table-header-cell w-12 justify-center">-</div>
           </>
         }
         renderRow={(index) => {

@@ -46,9 +46,9 @@ export const KogamiApp = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#fafafa] flex text-surface-900 font-sans">
-      <aside className="w-56 bg-[#f6f7fb] border-r border-surface-200 flex flex-col fixed inset-y-0 left-0 z-50">
-        <div className="p-5 border-b border-surface-200">
+    <div className="min-h-screen bg-surface-50 flex text-surface-900 font-sans">
+      <aside className="w-56 bg-brand-50 border-r border-surface-200 flex flex-col fixed inset-y-0 left-0 z-50">
+        <div className="p-5 border-b border-surface-200 bg-brand-50">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 bg-brand-800 rounded flex items-center justify-center shadow-sm">
               <Fingerprint className="h-5 w-5 text-white" strokeWidth={1.5} />
@@ -85,8 +85,8 @@ export const KogamiApp = () => {
                       parentId ? 'ml-4 w-[calc(100%-1rem)]' : ''
                     } ${
                       activeTab === item.id
-                        ? 'bg-brand-100 text-brand-900 font-medium shadow-sm'
-                        : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900'
+                        ? 'bg-brand-200/50 text-brand-900 font-bold shadow-sm ring-1 ring-brand-200/50'
+                        : 'text-surface-600 hover:bg-surface-100/80 hover:text-surface-900'
                     }`}
                   >
                     <item.icon

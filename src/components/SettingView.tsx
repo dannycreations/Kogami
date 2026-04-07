@@ -9,14 +9,12 @@ export const SettingView = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <div className="bg-white rounded-lg border border-surface-200 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-surface-100 bg-surface-50/50">
-          <div className="flex items-center space-x-2">
-            <Globe className="h-4 w-4 text-brand-600" />
-            <h2 className="text-xs font-bold text-surface-900 uppercase tracking-wider">Regional Settings</h2>
-          </div>
+      <div className="card">
+        <div className="card-header">
+          <Globe className="h-4 w-4 text-brand-600" />
+          <h2 className="text-xs font-bold text-surface-900 uppercase tracking-wider">Regional Settings</h2>
         </div>
-        <div className="p-6 space-y-6">
+        <div className="card-body space-y-6">
           <div className="flex flex-col space-y-2">
             <label className="text-sm font-bold text-surface-800">Preferred Currency</label>
             <p className="text-xs text-surface-500 mb-2">Select the currency used for all calculations and reports.</p>

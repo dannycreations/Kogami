@@ -17,14 +17,10 @@ const RateRow = memo(({ entry, style }: { entry: InterestRateEntry; style?: Reac
         </div>
       </div>
       <div className="v-cell border-r border-surface-100 text-right w-32 shrink-0 flex items-center justify-end">
-        <span className="font-mono text-[13px] font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded border border-brand-100">
-          {entry.rate.toFixed(2)}%
-        </span>
+        <span className="badge badge-brand font-mono">{entry.rate.toFixed(2)}%</span>
       </div>
       <div className="v-cell text-center w-24 shrink-0 flex items-center justify-center">
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Active
-        </span>
+        <span className="badge badge-emerald">Active</span>
       </div>
     </div>
   );
@@ -87,7 +83,7 @@ export const InterestRateView = () => {
   });
 
   return (
-    <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
+    <div className="view-container">
       <FilterBar
         date={date}
         onDateChange={setDate}
@@ -117,13 +113,9 @@ export const InterestRateView = () => {
         hasData={!!data}
         headers={
           <>
-            <div className="px-4 py-2.5 border-r border-surface-200 bg-surface-50 flex-1 flex items-center">Legal Reference (Tags)</div>
-            <div className="px-4 py-2.5 border-r border-surface-200 text-right bg-surface-50 w-32 shrink-0 flex items-center justify-end">
-              Rate / Month
-            </div>
-            <div className="px-4 py-2.5 text-center text-surface-400 font-medium bg-surface-50 w-24 shrink-0 flex items-center justify-center">
-              Status
-            </div>
+            <div className="table-header-cell flex-1">Legal Reference (Tags)</div>
+            <div className="table-header-cell w-32 justify-end text-right">Rate / Month</div>
+            <div className="table-header-cell w-24 justify-center text-surface-400 font-medium">Status</div>
           </>
         }
         renderRow={(index) => {

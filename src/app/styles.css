@@ -53,11 +53,15 @@
   }
 
   .table-container {
-    @apply w-full border border-surface-200 bg-white rounded shadow-sm overflow-hidden;
+    @apply w-full border border-surface-200 bg-white rounded shadow-sm overflow-hidden flex flex-col;
   }
 
   .table-header {
-    @apply bg-surface-50 border-b border-surface-200 text-xs font-semibold text-surface-600 uppercase tracking-wider select-none;
+    @apply bg-surface-50 border-b border-surface-200 text-[10px] font-black text-surface-500 uppercase tracking-widest select-none;
+  }
+
+  .table-header-cell {
+    @apply px-4 py-3 border-r border-surface-200 last:border-r-0 flex items-center;
   }
 
   .v-row {
@@ -66,6 +70,53 @@
 
   .v-cell {
     @apply px-4 py-2.5 text-sm text-surface-700;
+  }
+
+  /* Status Badges */
+  .badge {
+    @apply inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border transition-colors;
+  }
+
+  .badge-emerald {
+    @apply bg-emerald-50 text-emerald-700 border-emerald-200;
+  }
+
+  .badge-red {
+    @apply bg-red-50 text-red-700 border-red-200;
+  }
+
+  .badge-brand {
+    @apply bg-brand-50 text-brand-900 border-brand-100;
+  }
+
+  .badge-surface {
+    @apply bg-surface-100 text-surface-500 border-surface-200;
+  }
+
+  /* Layout Containers */
+  .view-container {
+    @apply flex flex-col h-full space-y-4 max-h-[calc(100vh-7rem)];
+  }
+
+  .card {
+    @apply bg-white border border-surface-200 rounded-xl shadow-sm overflow-hidden;
+  }
+
+  .card-header {
+    @apply p-4 border-b border-surface-100 bg-surface-50/50 flex items-center space-x-2;
+  }
+
+  .card-body {
+    @apply p-6;
+  }
+
+  /* Typography */
+  .label-caps {
+    @apply text-[9px] font-bold uppercase tracking-wider text-surface-400;
+  }
+
+  .label-caps-sm {
+    @apply text-[10px] font-black uppercase tracking-[0.15em] text-surface-400;
   }
 
   /* Custom scrollbar for tables */

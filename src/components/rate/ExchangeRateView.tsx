@@ -23,18 +23,14 @@ const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: 
       </div>
       <div className="v-cell border-r border-surface-100 flex-1 min-w-0 flex items-center">
         <div className="flex items-center">
-          <span className="font-mono font-bold text-brand-900 bg-brand-50 px-1.5 py-0.5 rounded text-xs border border-brand-100 mr-2">
-            {entry.currency}
-          </span>
+          <span className="badge badge-brand mr-2 font-mono">{entry.currency}</span>
         </div>
       </div>
       <div className="v-cell border-r border-surface-100 text-right w-1/3 shrink-0 flex items-center justify-end">
         <span className="font-mono text-[13px] font-medium text-surface-800">{IDR_FORMATTER.format(entry.rate)}</span>
       </div>
       <div className="v-cell text-center w-24 shrink-0 flex items-center justify-center">
-        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200">
-          Active
-        </span>
+        <span className="badge badge-emerald">Active</span>
       </div>
     </div>
   );
@@ -97,7 +93,7 @@ export const ExchangeRateView = () => {
   });
 
   return (
-    <div className="flex flex-col h-full space-y-3.5 max-h-[calc(100vh-7rem)]">
+    <div className="view-container">
       <FilterBar
         date={date}
         onDateChange={setDate}
@@ -127,16 +123,10 @@ export const ExchangeRateView = () => {
         hasData={!!data}
         headers={
           <>
-            <div className="px-4 py-2.5 w-16 text-center border-r border-surface-200 bg-surface-50 shrink-0 flex items-center justify-center">
-              Flag
-            </div>
-            <div className="px-4 py-2.5 border-r border-surface-200 bg-surface-50 flex-1 flex items-center">Currency Code</div>
-            <div className="px-4 py-2.5 border-r border-surface-200 text-right bg-surface-50 w-1/3 shrink-0 flex items-center justify-end">
-              Base Rate (IDR)
-            </div>
-            <div className="px-4 py-2.5 text-center text-surface-400 font-medium bg-surface-50 w-24 shrink-0 flex items-center justify-center">
-              Status
-            </div>
+            <div className="table-header-cell w-16 justify-center">Flag</div>
+            <div className="table-header-cell flex-1">Currency Code</div>
+            <div className="table-header-cell w-1/3 justify-end text-right">Base Rate (IDR)</div>
+            <div className="table-header-cell w-24 justify-center">Status</div>
           </>
         }
         renderRow={(index) => {

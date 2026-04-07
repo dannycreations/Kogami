@@ -1,4 +1,4 @@
-import { Calendar, RefreshCw } from 'lucide-react';
+import { Calendar, RefreshCw, Search } from 'lucide-react';
 import { memo, useCallback, useRef } from 'react';
 
 export const FilterBar = memo(
@@ -24,7 +24,7 @@ export const FilterBar = memo(
     <div className="flex items-center space-x-3 bg-white p-3 rounded shadow-sm border border-surface-200 mt-3.5">
       <div className="flex-1 flex items-center space-x-3 max-w-xl">
         <div className="w-1/2 relative">
-          <label className="absolute left-3 top-0 -translate-y-1/2 text-[9px] font-bold uppercase tracking-wider text-surface-400 select-none pointer-events-none bg-white px-1.5 z-30">
+          <label className="absolute left-3 top-0 -translate-y-1/2 label-caps select-none pointer-events-none bg-white px-1.5 z-30">
             Effective Date
           </label>
           <input
@@ -32,11 +32,11 @@ export const FilterBar = memo(
             placeholder="YYYY-MM-DD"
             value={date}
             onChange={(e) => onDateChange(e.target.value)}
-            className="compact-input w-full pl-3 pr-8 !py-2 !h-11 !relative z-10"
+            className="compact-input w-full pl-3 pr-10 !py-2 !h-11 !relative z-10 !rounded-lg"
           />
-          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center z-30">
-            <div className="relative cursor-pointer text-surface-400 hover:text-brand-600 transition-colors">
-              <Calendar className="h-4 w-4" />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center z-30">
+            <div className="relative cursor-pointer text-surface-400 hover:text-brand-600 transition-colors z-30">
+              <Calendar className="h-5 w-5" />
               <input
                 type="date"
                 className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
@@ -47,8 +47,9 @@ export const FilterBar = memo(
           </div>
         </div>
 
-        <div className="w-1/2 relative">
-          <label className="absolute left-8 top-0 -translate-y-1/2 text-[9px] font-bold uppercase tracking-wider text-surface-400 select-none pointer-events-none bg-white px-1.5 z-30">
+        <div className="w-1/2 relative flex items-center">
+          <Search className="absolute left-3.5 h-4 w-4 text-surface-400 z-30 pointer-events-none" />
+          <label className="absolute left-3 top-0 -translate-y-1/2 label-caps select-none pointer-events-none bg-white px-1.5 z-30">
             {searchLabel}
           </label>
           <input
@@ -56,7 +57,7 @@ export const FilterBar = memo(
             placeholder={searchPlaceholder}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="compact-input w-full pl-8 pr-3 !py-2 !h-11 !relative z-10"
+            className="compact-input w-full !pl-10 pr-3 !py-2 !h-11 !relative z-10 !rounded-lg"
           />
         </div>
       </div>

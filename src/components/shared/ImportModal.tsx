@@ -96,13 +96,13 @@ export const ImportCSVModal = <T extends { id: string }>({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between p-4 border-b border-surface-100">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl flex flex-col max-h-[90vh] overflow-hidden">
+        <div className="card-header justify-between">
           <div className="flex items-center space-x-2">
             <Upload className="h-5 w-5 text-brand-600" />
             <h2 className="text-sm font-bold text-surface-900 uppercase tracking-wider">{title}</h2>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-surface-50 rounded-full transition-colors">
+          <button onClick={onClose} className="p-1 hover:bg-surface-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-surface-400" />
           </button>
         </div>
@@ -132,13 +132,13 @@ export const ImportCSVModal = <T extends { id: string }>({
         <div className="p-4 border-t border-surface-100 flex justify-end space-x-3 bg-surface-50/50 rounded-b-lg">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-xs font-bold text-surface-600 hover:text-surface-900 transition-colors uppercase tracking-wider"
+            className="compact-button bg-transparent text-surface-600 hover:text-surface-900 font-bold uppercase tracking-wider !h-9"
           >
             Cancel
           </button>
           <button
             onClick={handleImport}
-            className="px-6 py-2 bg-brand-800 text-white rounded text-xs font-bold hover:bg-brand-900 transition-colors shadow-sm uppercase tracking-wider"
+            className="compact-button bg-brand-800 text-white hover:bg-brand-900 font-bold uppercase tracking-wider shadow-sm !h-9 px-6"
           >
             Import Data
           </button>
