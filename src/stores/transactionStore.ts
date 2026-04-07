@@ -9,6 +9,7 @@ export interface Transaction {
   readonly date: string;
   readonly description: string;
   readonly category: string;
+  readonly action: 'IN' | 'OUT';
   readonly amount: number;
   readonly currency: CurrencyCode;
 }
@@ -27,6 +28,8 @@ const normalizeTransaction = (tx: Transaction): Transaction => ({
   ...tx,
   description: tx.description.trim(),
   category: tx.category.trim(),
+  action: tx.action || 'IN',
+  amount: Math.abs(tx.amount || 0),
   currency: tx.currency.toUpperCase() as CurrencyCode,
 });
 

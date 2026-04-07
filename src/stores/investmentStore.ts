@@ -31,6 +31,8 @@ const normalizeTransaction = (tx: InvestmentTransaction): InvestmentTransaction 
   ...tx,
   symbol: tx.symbol.trim().toUpperCase(),
   action: tx.action.toUpperCase() as InvestmentTransaction['action'],
+  quantity: Math.abs(tx.quantity || 0),
+  price: Math.abs(tx.price || 0),
   currency: tx.currency.toUpperCase() as CurrencyCode,
 });
 

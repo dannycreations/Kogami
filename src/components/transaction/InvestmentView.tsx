@@ -33,15 +33,17 @@ const EditableRow = memo(
             className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono transition-all"
           />
         </div>
-        <div className="v-cell border-r border-surface-100 p-1 w-24 shrink-0 flex items-center justify-center bg-white">
-          <select
-            value={transaction.action}
-            onChange={(e) => onUpdate(transaction.id, { action: e.target.value as InvestmentTransaction['action'] })}
-            className="w-full h-7 px-1 text-surface-900 text-[9px] font-bold uppercase cursor-pointer outline-none border border-surface-200 rounded bg-white appearance-auto focus:ring-2 focus:ring-brand-500 focus:border-transparent transition-all"
+        <div className="v-cell border-r border-surface-100 p-1 w-24 shrink-0 flex items-center justify-center">
+          <button
+            onClick={() => onUpdate(transaction.id, { action: transaction.action === 'BUY' ? 'SELL' : 'BUY' })}
+            className={`w-full h-7 text-[10px] font-black rounded border transition-all ${
+              transaction.action === 'BUY'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'
+            }`}
           >
-            <option value="BUY">BUY</option>
-            <option value="SELL">SELL</option>
-          </select>
+            {transaction.action}
+          </button>
         </div>
         <div className="v-cell border-r border-surface-100 p-1 flex-1 flex items-center min-w-[120px]">
           <input
@@ -56,9 +58,12 @@ const EditableRow = memo(
           <input
             type="number"
             step="any"
+            min="0"
             value={transaction.quantity}
-            onChange={(e) => onUpdate(transaction.id, { quantity: parseFloat(e.target.value) || 0 })}
-            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all"
+            onChange={(e) => onUpdate(transaction.id, { quantity: Math.abs(parseFloat(e.target.value) || 0) })}
+            className={`w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all ${
+              transaction.action === 'BUY' ? 'text-emerald-700' : 'text-red-600'
+            }`}
           />
         </div>
         <div className="v-cell border-r border-surface-100 p-1 w-24 shrink-0 flex items-center justify-center bg-white">
@@ -78,9 +83,12 @@ const EditableRow = memo(
           <input
             type="number"
             step="any"
+            min="0"
             value={transaction.price}
-            onChange={(e) => onUpdate(transaction.id, { price: parseFloat(e.target.value) || 0 })}
-            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all"
+            onChange={(e) => onUpdate(transaction.id, { price: Math.abs(parseFloat(e.target.value) || 0) })}
+            className={`w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all ${
+              transaction.action === 'BUY' ? 'text-emerald-700' : 'text-red-600'
+            }`}
           />
         </div>
         <div className="v-cell p-0 w-16 shrink-0 flex items-center justify-center">
@@ -223,8 +231,8 @@ export const InvestmentView = () => {
             throw new Error(`Line ${lineIdx}: Action must be 'buy' or 'sell'.`);
           }
 
-          const parsedQuantity = parseFloat(quantity || '0');
-          const parsedPrice = parseFloat(price || '0');
+          const parsedQuantity = Math.abs(parseFloat(quantity || '0'));
+          const parsedPrice = Math.abs(parseFloat(price || '0'));
 
           if (isNaN(parsedQuantity) || isNaN(parsedPrice)) {
             throw new Error(`Line ${lineIdx}: Quantity and Price must be numbers.`);

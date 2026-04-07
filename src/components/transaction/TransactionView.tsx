@@ -33,6 +33,14 @@ const EditableRow = memo(
             className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono transition-all"
           />
         </div>
+        <div className="v-cell border-r border-surface-100 p-1 w-20 shrink-0 flex items-center justify-center">
+          <button
+            onClick={() => onUpdate(transaction.id, { action: transaction.action === 'IN' ? 'OUT' : 'IN' })}
+            className={`w-full h-7 text-[10px] font-black rounded border transition-all ${transaction.action === 'IN' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100' : 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100'}`}
+          >
+            {transaction.action}
+          </button>
+        </div>
         <div className="v-cell border-r border-surface-100 p-1 flex-1 flex items-center min-w-[200px]">
           <input
             type="text"
@@ -68,9 +76,12 @@ const EditableRow = memo(
           <input
             type="number"
             step="any"
+            min="0"
             value={transaction.amount}
-            onChange={(e) => onUpdate(transaction.id, { amount: parseFloat(e.target.value) || 0 })}
-            className="w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all"
+            onChange={(e) => onUpdate(transaction.id, { amount: Math.abs(parseFloat(e.target.value) || 0) })}
+            className={`w-full h-7 px-2 bg-white border border-surface-200 rounded focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none text-xs font-mono text-right transition-all ${
+              transaction.action === 'IN' ? 'text-emerald-700' : 'text-red-600'
+            }`}
           />
         </div>
         <div className="v-cell p-0 w-16 shrink-0 flex items-center justify-center">
@@ -116,6 +127,7 @@ export const TransactionView = () => {
     addTransaction({
       id: crypto.randomUUID(),
       date: new Date().toISOString().split('T')[0]!,
+      action: 'IN',
       description: '',
       category: '',
       amount: 0,
@@ -131,8 +143,8 @@ export const TransactionView = () => {
   });
 
   const exportCSV = () => {
-    const headers = ['Date', 'Description', 'Category', 'Currency', 'Amount'];
-    const rows = transactions.map((tx) => [tx.date, tx.description, tx.category, tx.currency, tx.amount]);
+    const headers = ['Date', 'Action', 'Description', 'Category', 'Currency', 'Amount'];
+    const rows = transactions.map((tx) => [tx.date, tx.action, tx.description, tx.category, tx.currency, tx.amount]);
     const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -197,17 +209,30 @@ export const TransactionView = () => {
         onClose={() => setIsImportModalOpen(false)}
         onImport={(newTxs) => setTransactions([...newTxs, ...transactions])}
         title="Import General Transactions"
-        template="Date,Description,Category,Currency,Amount"
-        example="2024-01-01,Lunch,Food,USD,15.50"
+        template="Date,Action,Description,Category,Currency,Amount"
+        example="2024-01-01,IN,Lunch,Food,USD,15.50"
         minColumns={5}
         parseLine={(parts, lineIdx) => {
-          const [date, description, category, currency, amount] = parts;
+          const [date, description, category, currency, actionOrAmount, amountMaybe] = parts;
 
           if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
             throw new Error(`Line ${lineIdx}: Invalid date format. Expected YYYY-MM-DD.`);
           }
 
-          const parsedAmount = parseFloat(amount || '0');
+          let action: 'IN' | 'OUT' = 'IN';
+          let rawAmount = '0';
+
+          if (parts.length >= 6) {
+            action = actionOrAmount?.toUpperCase() === 'OUT' ? 'OUT' : 'IN';
+            rawAmount = amountMaybe || '0';
+          } else {
+            // Backward compatibility or simpler format: check if amount is negative
+            const parsed = parseFloat(actionOrAmount || '0');
+            action = parsed < 0 ? 'OUT' : 'IN';
+            rawAmount = Math.abs(parsed).toString();
+          }
+
+          const parsedAmount = Math.abs(parseFloat(rawAmount));
 
           if (isNaN(parsedAmount)) {
             throw new Error(`Line ${lineIdx}: Amount must be a number.`);
@@ -216,6 +241,7 @@ export const TransactionView = () => {
           return {
             id: crypto.randomUUID(),
             date,
+            action,
             description: description || '',
             category: category || '',
             currency: (currency?.toUpperCase() as CurrencyCode) || 'USD',
@@ -234,6 +260,9 @@ export const TransactionView = () => {
           <>
             <div className="px-4 py-2 w-40 text-center border-r border-surface-200 bg-surface-50 shrink-0 font-bold text-[10px] uppercase text-surface-500">
               Date
+            </div>
+            <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 w-20 shrink-0 font-bold text-[10px] uppercase text-surface-500 text-center">
+              Action
             </div>
             <div className="px-4 py-2 border-r border-surface-200 bg-surface-50 flex-1 min-w-[200px] font-bold text-[10px] uppercase text-surface-500">
               Description
