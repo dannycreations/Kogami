@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import { Data, Effect } from 'effect';
 import { HttpClient, HttpClientRequest } from 'effect/http';
 import { DOMParser } from 'linkedom';
 
@@ -10,12 +10,17 @@ import type { BaseRateData, BaseRateEntry } from '@kogami/server/types/rates';
 
 type RateType = 'exchange' | 'interest';
 
+export class ScraperError extends Data.TaggedError('ScraperError')<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
+
 const SOURCES: Readonly<Record<RateType, { readonly url: string; readonly file: string }>> = {
   exchange: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak', file: 'exchange-rates.json' },
   interest: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/tarif-bunga', file: 'interest-rates.json' },
 };
 
-const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
 
 export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: (dom: ReturnType<DOMParser['parseFromString']>) => T[]) => {
   const sourceUrl = SOURCES[type].url;
@@ -33,8 +38,7 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
         client.execute,
         Effect.timeout('60 seconds'),
         Effect.flatMap((res) => res.text),
-        // @effect-diagnostics-next-line globalErrorInEffectFailure:off
-        Effect.mapError((err) => new Error(`Scrape failed: ${err}`)),
+        Effect.mapError((err) => new ScraperError({ message: `Scrape failed: ${err}`, cause: err })),
         Effect.scoped,
       );
 
@@ -43,14 +47,21 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
       const range = parseDateRange(rangeText);
 
       if (!range) {
-        // @effect-diagnostics-next-line globalErrorInEffectFailure:off
-        return yield* Effect.fail(new Error(`Could not parse date range from: "${rangeText}"`));
+        return yield* new ScraperError({ message: `Could not parse date range from: "${rangeText}"` });
+      }
+
+      const entries = parseRows(dom);
+      if (entries.length === 0) {
+        // A page that parses into zero rows is a broken layout, not an empty rate table.
+        // Failing here lets getOrScrape fall back instead of storing a range that serves
+        // clients an empty result for every date it covers.
+        return yield* new ScraperError({ message: `No rate rows parsed from: ${url}` });
       }
 
       return {
         startDate: range.start,
         endDate: range.end,
-        entries: parseRows(dom),
+        entries,
       };
     });
 
@@ -129,5 +140,7 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
       return data;
     });
 
-  return { getOrScrape, filePath };
+  return { getOrScrape, getStore: manager.getStore, filePath };
 };
+
+export type Scraper<T extends BaseRateEntry = BaseRateEntry> = ReturnType<typeof makeScraper<T>>;

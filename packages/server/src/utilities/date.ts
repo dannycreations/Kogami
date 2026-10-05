@@ -61,3 +61,20 @@ export const getDayDiff = (start: string, end: string): number => {
   const e = new Date(end).getTime();
   return Math.round((e - s) / MS_PER_DAY) + 1;
 };
+
+export const addDays = (date: string, days: number): string => {
+  const d = new Date(new Date(date).getTime() + days * MS_PER_DAY);
+  return d.toISOString().split('T')[0]!;
+};
+
+interface DatedRange {
+  readonly startDate: string;
+  readonly endDate: string;
+}
+
+export const findFirstUncoveredDate = (ranges: ReadonlyArray<DatedRange>, from: string, to: string): string | null => {
+  for (let day = from; day <= to; day = addDays(day, 1)) {
+    if (!ranges.some((range) => day >= range.startDate && day <= range.endDate)) return day;
+  }
+  return null;
+};

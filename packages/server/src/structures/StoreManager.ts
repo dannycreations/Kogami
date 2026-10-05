@@ -1,4 +1,9 @@
-import { Effect, FileSystem, Path } from 'effect';
+import { Data, Effect, FileSystem, Path } from 'effect';
+
+export class StoreSerializationError extends Data.TaggedError('StoreSerializationError')<{
+  readonly message: string;
+  readonly cause?: unknown;
+}> {}
 
 export interface DataWithRange {
   readonly startDate: string;
@@ -37,11 +42,9 @@ export const makeStoreManager = <T extends DataWithRange>(filePath: string) => {
       // Sort keys to maintain predictable file structure and improve git diffs
       const sortedStore = Object.fromEntries(Object.entries(store).sort(([a], [b]) => b.localeCompare(a)));
 
-      // @effect-diagnostics-next-line globalErrorInEffectCatch:off
       const content = yield* Effect.try({
         try: () => JSON.stringify(sortedStore),
-        // @effect-diagnostics-next-line globalErrorInEffectFailure:off
-        catch: (e) => new Error(`JSON serialization failed: ${e}`),
+        catch: (e) => new StoreSerializationError({ message: `JSON serialization failed: ${e}`, cause: e }),
       });
 
       yield* fs.writeFileString(filePath, content);

@@ -1,8 +1,12 @@
 name: Prefetch Rates
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 12 * * 3'
+
+permissions:
+  contents: write
 
 jobs:
   prefetch:
@@ -23,6 +27,7 @@ jobs:
         run: bun run packages/server/scripts/prefetch.ts
 
       - name: Commit and push changes
+        if: always()
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
