@@ -1,5 +1,5 @@
-import { HttpClient, HttpClientRequest } from '@effect/platform';
 import { Effect } from 'effect';
+import { HttpClient, HttpClientRequest } from 'effect/http';
 import { DOMParser } from 'linkedom';
 
 import { makeStoreManager } from '../structures/StoreManager';
@@ -116,7 +116,7 @@ export const makeScraper = <T extends BaseRateEntry>(
       }
 
       const data = yield* scrape(date).pipe(
-        Effect.catchAll((error) => {
+        Effect.catch((error) => {
           if (fallback) {
             return Effect.logWarning(
               `Scrape failed for ${date}, falling back to existing range ${fallback.startDate}_${fallback.endDate}: ${error.message}`,

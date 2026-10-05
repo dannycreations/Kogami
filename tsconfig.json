@@ -10,7 +10,8 @@
     "isolatedModules": false,
     "plugins": [
       {
-        "name": "@effect/language-service"
+        "name": "@effect/language-service",
+        "allowedUnstableApis": ["effect/http"]
       }
     ],
 

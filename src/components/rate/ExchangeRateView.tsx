@@ -1,6 +1,6 @@
-import { FetchHttpClient, HttpClient, HttpClientRequest } from '@effect/platform';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Effect } from 'effect';
+import { FetchHttpClient, HttpClient, HttpClientRequest } from 'effect/http';
 import { AlertCircle } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -55,7 +55,7 @@ export const ExchangeRateView = () => {
         client.execute,
         Effect.flatMap((res) => res.json),
       );
-      return response as ExchangeRateData;
+      return response as unknown as ExchangeRateData;
     }).pipe(Effect.provide(FetchHttpClient.layer));
 
     Effect.runPromise(program)

@@ -1,5 +1,4 @@
-import { FileSystem, Path } from '@effect/platform';
-import { Effect } from 'effect';
+import { Effect, FileSystem, Path } from 'effect';
 
 export interface DataWithRange {
   readonly startDate: string;
@@ -23,7 +22,7 @@ export const makeStoreManager = <T extends DataWithRange>(filePath: string) => {
           catch: () => ({}) as Store<T>,
         }),
       ),
-      Effect.catchAll(() => Effect.succeed({} as Store<T>)),
+      Effect.orElseSucceed(() => ({}) as Store<T>),
     );
     return cache;
   });

@@ -1,11 +1,12 @@
-import { HttpRouter, HttpServerRequest, HttpServerResponse } from '@effect/platform';
 import { normalizeDate } from '@server/utilities/Date';
 import { Effect } from 'effect';
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
 
 import { scraper } from './Handler';
 
-export const exchangeRatesRouter = HttpRouter.empty.pipe(
-  HttpRouter.get(
+export const exchangeRatesRoutes = HttpRouter.addAll([
+  HttpRouter.route(
+    'GET',
     '/exchange-rates',
     Effect.gen(function* () {
       const request = yield* HttpServerRequest.HttpServerRequest;
@@ -20,4 +21,4 @@ export const exchangeRatesRouter = HttpRouter.empty.pipe(
       return yield* HttpServerResponse.json(data);
     }),
   ),
-);
+]);

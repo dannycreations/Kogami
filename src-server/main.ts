@@ -1,35 +1,26 @@
-import { FetchHttpClient, HttpMiddleware, HttpRouter, HttpServer, HttpServerResponse } from '@effect/platform';
 import { BunFileSystem, BunHttpServer, BunPath } from '@effect/platform-bun';
-import { Effect, Layer, Logger } from 'effect';
+import { Effect, Layer } from 'effect';
+import { FetchHttpClient, HttpRouter, HttpServerResponse } from 'effect/http';
 
-import { exchangeRatesRouter } from './api/exchange-rates/Router';
-import { interestRatesRouter } from './api/interest-rates/Router';
+import { exchangeRatesRoutes } from './api/exchange-rates/Router';
+import { interestRatesRoutes } from './api/interest-rates/Router';
 import { LoggerClientLayer, makeLoggerClient } from './structures/LoggerClient';
 
-const router = HttpRouter.empty.pipe(
-  HttpRouter.concat(exchangeRatesRouter),
-  HttpRouter.concat(interestRatesRouter),
-  HttpRouter.all('*', HttpServerResponse.empty({ status: 404 })),
-  HttpMiddleware.cors(),
-);
+const routesLayer = Layer.mergeAll(
+  HttpRouter.addAll([HttpRouter.route('*', '*', HttpServerResponse.empty({ status: 404 }))]),
+  exchangeRatesRoutes,
+  interestRatesRoutes,
+  HttpRouter.cors(),
+).pipe(Layer.provideMerge(HttpRouter.layer));
 
-const logger = makeLoggerClient();
-
-const HttpLive = router.pipe(
-  HttpServer.serve(),
-  HttpServer.withLogAddress,
-  Layer.provide(
-    BunHttpServer.layer({
-      port: 1730,
-      idleTimeout: 0,
-    }),
-  ),
+const HttpLive = HttpRouter.serve(routesLayer).pipe(
+  Layer.provide(BunHttpServer.layer({ port: 1730, idleTimeout: 0 })),
   Layer.provide(BunPath.layer),
   Layer.provide(BunFileSystem.layer),
   Layer.provide(FetchHttpClient.layer),
-  Layer.provide(LoggerClientLayer(Logger.defaultLogger, logger)),
+  Layer.provide(LoggerClientLayer(makeLoggerClient())),
 );
 
-const program = Layer.launch(HttpLive).pipe(Effect.sandbox, Effect.catchAll(Effect.logError));
+const program = Layer.launch(HttpLive).pipe(Effect.sandbox, Effect.catch(Effect.logError));
 
 Effect.runPromise(program as Effect.Effect<never, never, never>);

@@ -1,10 +1,10 @@
-import { FetchHttpClient, FileSystem } from '@effect/platform';
 import { BunFileSystem, BunPath } from '@effect/platform-bun';
 import { scraper as exchangeScrape } from '@server/api/exchange-rates/Handler';
 import { scraper as interestScrape } from '@server/api/interest-rates/Handler';
 import { LoggerClientLayer, makeLoggerClient } from '@server/structures/LoggerClient';
 import { getDayDiff } from '@server/utilities/Date';
-import { Effect, Layer, Logger } from 'effect';
+import { Effect, FileSystem, Layer } from 'effect';
+import { FetchHttpClient } from 'effect/http';
 
 const validateAndCollectMissing = (dataFile: string, isMonthly: boolean) =>
   Effect.gen(function* () {
@@ -96,12 +96,12 @@ const prefetch = Effect.gen(function* () {
     for (const date of exchangeTargets) {
       if (!date) continue;
       yield* Effect.logInfo(`Processing exchange rate target date: ${date}`);
-      const result = yield* Effect.either(exchangeScrape.getOrScrape(date));
-      if (result._tag === 'Left') {
-        const errorMsg = result.left instanceof Error ? result.left.message : String(result.left);
+      const result = yield* Effect.result(exchangeScrape.getOrScrape(date));
+      if (result._tag === 'Failure') {
+        const errorMsg = result.failure instanceof Error ? result.failure.message : String(result.failure);
         yield* Effect.logError(`Prefetch failed for exchange rate ${date} -> ${errorMsg}`);
       } else {
-        const data = result.right;
+        const data = result.success;
         const usd = data.entries.find((e) => e.currency === 'USD');
         yield* Effect.logInfo(`Successfully fetched/verified exchange rates [${data.startDate} to ${data.endDate}] USD: ${usd?.rate ?? 'N/A'}`);
       }
@@ -116,12 +116,12 @@ const prefetch = Effect.gen(function* () {
     for (const date of interestTargets) {
       if (!date) continue;
       yield* Effect.logInfo(`Processing interest rate target date: ${date}`);
-      const result = yield* Effect.either(interestScrape.getOrScrape(date));
-      if (result._tag === 'Left') {
-        const errorMsg = result.left instanceof Error ? result.left.message : String(result.left);
+      const result = yield* Effect.result(interestScrape.getOrScrape(date));
+      if (result._tag === 'Failure') {
+        const errorMsg = result.failure instanceof Error ? result.failure.message : String(result.failure);
         yield* Effect.logError(`Prefetch failed for interest rate ${date} -> ${errorMsg}`);
       } else {
-        const data = result.right;
+        const data = result.success;
         yield* Effect.logInfo(
           `Successfully fetched/verified interest rates [${data.startDate} to ${data.endDate}] with ${data.entries.length} entries`,
         );
@@ -133,7 +133,6 @@ const prefetch = Effect.gen(function* () {
   yield* Effect.logInfo('Prefetch complete.');
 });
 
-const logger = makeLoggerClient();
-const AppLive = Layer.mergeAll(BunPath.layer, BunFileSystem.layer, FetchHttpClient.layer, LoggerClientLayer(Logger.defaultLogger, logger));
-const program = prefetch.pipe(Effect.provide(AppLive), Effect.sandbox, Effect.catchAll(Effect.logError));
+const AppLive = Layer.mergeAll(BunPath.layer, BunFileSystem.layer, FetchHttpClient.layer, LoggerClientLayer(makeLoggerClient()));
+const program = prefetch.pipe(Effect.provide(AppLive), Effect.sandbox, Effect.catch(Effect.logError));
 Effect.runPromise(program);
