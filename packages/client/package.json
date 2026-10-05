@@ -1,0 +1,39 @@
+{
+  "name": "@kogami/client",
+  "version": "0.0.1",
+  "author": "dannycreations",
+  "license": "GPL",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./*": "./src/*"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "check": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dannycreations/Kogami.git",
+    "directory": "packages/client"
+  },
+  "homepage": "https://github.com/dannycreations/Kogami",
+  "dependencies": {
+    "@kogami/server": "workspace:*",
+    "@tanstack/react-virtual": "^3.14.13",
+    "effect": "^4.0.1",
+    "lucide-react": "^1.52.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "zustand": "^5.0.15"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/react": "^19.2.10",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "vite": "^8.3.2",
+    "vite-plugin-checker": "^0.14.5"
+  }
+}

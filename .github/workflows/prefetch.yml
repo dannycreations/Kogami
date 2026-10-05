@@ -20,7 +20,7 @@ jobs:
         run: bun install
 
       - name: Run prefetch script
-        run: bun scripts/prefetch.ts
+        run: bun run packages/server/scripts/prefetch.ts
 
       - name: Commit and push changes
         run: |

@@ -1,18 +1,19 @@
 {
-  "name": "kogami",
-  "version": "0.0.1",
+  "name": "kogami-workspace",
+  "version": "0.0.0",
   "author": "dannycreations",
   "license": "GPL",
   "type": "module",
   "private": true,
   "scripts": {
-    "start:server": "bun src-server/main.ts",
-    "dev": "vite",
-    "dev:server": "bun --watch src-server/main.ts",
-    "build": "vite build",
-    "check": "tsc --noEmit",
+    "start:server": "bun --filter @kogami/server start",
+    "dev": "bun --filter @kogami/client dev",
+    "dev:server": "bun --filter @kogami/server dev",
+    "build": "bun --filter @kogami/client build",
+    "check": "bun run format && bun --filter '*' check",
+    "test": "bun run check && bun test",
     "format": "prettier --write .",
-    "update": "npm-check-updates -u",
+    "update": "npm-check-updates -u -w",
     "prepare": "husky && effect-tsgo patch"
   },
   "repository": {
@@ -20,35 +21,16 @@
     "url": "https://github.com/dannycreations/Kogami.git"
   },
   "homepage": "https://github.com/dannycreations/Kogami",
-  "dependencies": {
-    "@effect/platform-browser": "^4.0.1",
-    "@effect/platform-bun": "^4.0.1",
-    "@tanstack/react-virtual": "^3.14.13",
-    "clsx": "^2.1.1",
-    "effect": "^4.0.1",
-    "idb": "^8.0.3",
-    "linkedom": "^0.18.13",
-    "lucide-react": "^1.52.0",
-    "pino": "^10.4.0",
-    "pino-pretty": "^13.2.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "zustand": "^5.0.15"
-  },
+  "workspaces": [
+    "packages/*"
+  ],
   "devDependencies": {
     "@effect/tsgo": "^0.48.1",
     "@ianvs/prettier-plugin-sort-imports": "^4.7.1",
-    "@tailwindcss/vite": "^4.3.3",
-    "@types/bun": "^1.4.2",
-    "@types/react-dom": "^19.3.0",
-    "@types/react-syntax-highlighter": "^15.5.13",
-    "@vitejs/plugin-react": "^6.1.2",
     "husky": "^9.1.7",
     "npm-check-updates": "^23.1.0",
     "prettier": "^3.9.9",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.2",
-    "vite-plugin-checker": "^0.14.5"
+    "typescript": "^7.0.2"
   },
   "packageManager": "bun@1.4.2"
 }
