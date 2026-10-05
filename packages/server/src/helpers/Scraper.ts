@@ -8,28 +8,28 @@ import { getDayDiff, parseDateRange } from '@kogami/server/utilities/date';
 import type { Store } from '@kogami/server/structures/StoreManager';
 import type { BaseRateData, BaseRateEntry } from '@kogami/server/types/rates';
 
-export const makeScraper = <T extends BaseRateEntry>(
-  type: 'exchange' | 'interest',
-  parseRows: (dom: ReturnType<DOMParser['parseFromString']>) => T[],
-) => {
-  const urlBase =
-    type === 'exchange' ? 'https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak' : 'https://fiskal.kemenkeu.go.id/informasi-publik/tarif-bunga';
+type RateType = 'exchange' | 'interest';
 
-  const fileName = `${type === 'exchange' ? 'exchange-rates' : 'interest-rates'}.json`;
-  const filePath = `data/${fileName}`;
+const SOURCES: Readonly<Record<RateType, { readonly url: string; readonly file: string }>> = {
+  exchange: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak', file: 'exchange-rates.json' },
+  interest: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/tarif-bunga', file: 'interest-rates.json' },
+};
+
+const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+
+export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: (dom: ReturnType<DOMParser['parseFromString']>) => T[]) => {
+  const sourceUrl = SOURCES[type].url;
+  const filePath = `data/${SOURCES[type].file}`;
   const manager = makeStoreManager<BaseRateData<T>>(filePath);
 
   const scrape = (date: string) =>
     Effect.gen(function* () {
       const client = yield* HttpClient.HttpClient;
-      const url = `${urlBase}?date=${date}`;
+      const url = `${sourceUrl}?date=${date}`;
 
       yield* Effect.logInfo(`Fetching URL: ${url}`);
       const response = yield* HttpClientRequest.get(url).pipe(
-        HttpClientRequest.setHeader(
-          'User-Agent',
-          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        ),
+        HttpClientRequest.setHeader('User-Agent', USER_AGENT),
         client.execute,
         Effect.timeout('60 seconds'),
         Effect.flatMap((res) => res.text),
@@ -51,7 +51,7 @@ export const makeScraper = <T extends BaseRateEntry>(
         startDate: range.start,
         endDate: range.end,
         entries: parseRows(dom),
-      } as BaseRateData<T>;
+      };
     });
 
   const getOrScrape = (date: string) =>
@@ -62,37 +62,28 @@ export const makeScraper = <T extends BaseRateEntry>(
       let existing: BaseRateData<T> | undefined;
       let fallback: BaseRateData<T> | undefined;
 
-      // Try year-based fast lookup first
-      const yearStr = date.substring(0, 4);
-      const yearEntry = store[yearStr];
-      if (yearEntry && date >= yearEntry.startDate && date <= yearEntry.endDate) {
-        fallback = yearEntry;
-        if (type === 'interest' || getDayDiff(yearEntry.startDate, yearEntry.endDate) <= 7 || date > today) {
-          existing = yearEntry;
-        }
-      }
+      for (const key in store) {
+        const data = store[key]!;
+        if (date < data.startDate || date > data.endDate) continue;
 
-      if (!existing) {
-        // Exchange rates often have overlapping ranges (year vs week)
-        // Interest rates usually have exact year keys
-        for (const key in store) {
-          const data = store[key]!;
-          if (date >= data.startDate && date <= data.endDate) {
-            // Favor shorter ranges (week vs year) for exchange rates
-            if (!fallback || getDayDiff(data.startDate, data.endDate) < getDayDiff(fallback.startDate, fallback.endDate)) {
-              fallback = data;
-            }
-            if (type === 'interest' || getDayDiff(data.startDate, data.endDate) <= 7 || date > today) {
-              existing = data;
-              if (type === 'interest' || getDayDiff(data.startDate, data.endDate) <= 7) break;
-            }
-          }
+        const days = getDayDiff(data.startDate, data.endDate);
+        // Interest ranges are stored one per month, so any covering range is authoritative.
+        // Exchange ranges are weekly, so short ranges win over the longer holiday-stretched ones.
+        const isAuthoritative = type === 'interest' || days <= 7;
+
+        if (!fallback || days < getDayDiff(fallback.startDate, fallback.endDate)) {
+          fallback = data;
+        }
+
+        if (isAuthoritative || date > today) {
+          existing = data;
+          if (isAuthoritative) break;
         }
       }
 
       if (existing) {
         yield* Effect.logInfo(`Cache hit: ${existing.startDate} to ${existing.endDate}`);
-        return existing as BaseRateData<T>;
+        return existing;
       }
 
       const data = yield* scrape(date).pipe(

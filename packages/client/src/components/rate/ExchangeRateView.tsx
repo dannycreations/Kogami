@@ -1,9 +1,8 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Effect } from 'effect';
-import { FetchHttpClient, HttpClient, HttpClientRequest } from 'effect/http';
 import { AlertCircle } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 
+import { useRateData } from '@kogami/client/components/rate/useRateData';
 import { FilterBar, VirtualTable } from '@kogami/client/components/shared/DataView';
 
 import type { ExchangeRateData, ExchangeRateEntry } from '@kogami/server/types/rates';
@@ -37,45 +36,10 @@ const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: 
 });
 
 export const ExchangeRateView = () => {
-  const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [currency, setCurrency] = useState<string>('');
-  const [data, setData] = useState<ExchangeRateData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { date, onDateChange, data, loading, error } = useRateData<ExchangeRateData>('/exchange-rates');
 
   const parentRef = useRef<HTMLDivElement>(null);
-
-  const fetchExchangeRates = useCallback((targetDate: string) => {
-    setLoading(true);
-    setError(null);
-
-    const program = Effect.gen(function* () {
-      const client = yield* HttpClient.HttpClient;
-      const response = yield* HttpClientRequest.get(`http://localhost:1730/exchange-rates?date=${targetDate}`).pipe(
-        client.execute,
-        Effect.flatMap((res) => res.json),
-      );
-      return response as unknown as ExchangeRateData;
-    }).pipe(Effect.provide(FetchHttpClient.layer));
-
-    Effect.runPromise(program)
-      .then((result) => {
-        setData(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(String(err));
-        setLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    const d = date.trim();
-    if (!d) return;
-
-    const timer = setTimeout(() => fetchExchangeRates(d), 500);
-    return () => clearTimeout(timer);
-  }, [date, fetchExchangeRates]);
 
   const filteredEntries = useMemo(() => {
     const entries = data?.entries;
@@ -96,7 +60,7 @@ export const ExchangeRateView = () => {
     <div className="view-container">
       <FilterBar
         date={date}
-        onDateChange={setDate}
+        onDateChange={onDateChange}
         search={currency}
         onSearchChange={setCurrency}
         searchLabel="Currency Find"

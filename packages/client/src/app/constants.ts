@@ -1,3 +1,7 @@
+export const API_BASE_URL = 'http://localhost:1730';
+
+export const DEFAULT_CURRENCY: CurrencyCode = 'IDR';
+
 export const CURRENCIES = [
   { code: 'IDR', name: 'Indonesian Rupiah' },
   { code: 'USD', name: 'US Dollar' },
@@ -8,5 +12,3 @@ export const CURRENCIES = [
 ] as const;
 
 export type CurrencyCode = (typeof CURRENCIES)[number]['code'];
-
-export const DEFAULT_CURRENCY: CurrencyCode = 'IDR';

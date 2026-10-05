@@ -7,6 +7,7 @@ import { VirtualTable } from '@kogami/client/components/shared/DataView';
 import { ImportCSVModal } from '@kogami/client/components/shared/ImportModal';
 import { useInvestmentStore } from '@kogami/client/stores/investmentStore';
 import { useSettingStore } from '@kogami/client/stores/settingsStore';
+import { downloadCSV, parseInvestmentLine } from '@kogami/client/utilities/csv';
 
 import type { CurrencyCode } from '@kogami/client/app/constants';
 import type { InvestmentTransaction } from '@kogami/client/stores/investmentStore';
@@ -143,18 +144,11 @@ export const InvestmentView = () => {
     overscan: 10,
   });
 
-  const exportCSV = () => {
-    const headers = ['Date', 'Action', 'Symbol', 'Quantity', 'Currency', 'Price'];
-    const rows = transactions.map((tx) => [tx.date, tx.action, tx.symbol, tx.quantity, tx.currency, tx.price]);
-    const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'investments.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const exportCSV = () =>
+    downloadCSV('investments.csv', [
+      ['Date', 'Action', 'Symbol', 'Quantity', 'Currency', 'Price'],
+      ...transactions.map((tx) => [tx.date, tx.action, tx.symbol, tx.quantity, tx.currency, tx.price]),
+    ]);
 
   return (
     <div className="view-container">
@@ -210,35 +204,7 @@ export const InvestmentView = () => {
         template="Date,Action,Symbol,Quantity,Currency,Price"
         example="2024-01-01,buy,AAPL,10,USD,150.00"
         minColumns={6}
-        parseLine={(parts, lineIdx) => {
-          const [date, action, symbol, quantity, currency, price] = parts;
-
-          if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            throw new Error(`Line ${lineIdx}: Invalid date format. Expected YYYY-MM-DD.`);
-          }
-
-          const actionUpper = action?.toUpperCase();
-          if (actionUpper !== 'BUY' && actionUpper !== 'SELL') {
-            throw new Error(`Line ${lineIdx}: Action must be 'buy' or 'sell'.`);
-          }
-
-          const parsedQuantity = Math.abs(parseFloat(quantity || '0'));
-          const parsedPrice = Math.abs(parseFloat(price || '0'));
-
-          if (isNaN(parsedQuantity) || isNaN(parsedPrice)) {
-            throw new Error(`Line ${lineIdx}: Quantity and Price must be numbers.`);
-          }
-
-          return {
-            id: crypto.randomUUID(),
-            date,
-            action: actionUpper as InvestmentTransaction['action'],
-            symbol: symbol?.toUpperCase() || '',
-            quantity: parsedQuantity,
-            currency: (currency?.toUpperCase() as CurrencyCode) || 'USD',
-            price: parsedPrice,
-          };
-        }}
+        parseLine={parseInvestmentLine}
       />
 
       <VirtualTable

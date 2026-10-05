@@ -35,7 +35,7 @@ const NAV_LIST = [
 ] as const;
 
 export const KogamiApp = () => {
-  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id'] | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id']>('dashboard');
   const [expandedCategory, setExpandedCategory] = useState<string | null>(() => {
     const activeItem = NAV_LIST.find((item) => item.id === activeTab);
     return activeItem && 'parentId' in activeItem ? activeItem.parentId : null;

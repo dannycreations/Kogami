@@ -7,6 +7,7 @@ import { VirtualTable } from '@kogami/client/components/shared/DataView';
 import { ImportCSVModal } from '@kogami/client/components/shared/ImportModal';
 import { useSettingStore } from '@kogami/client/stores/settingsStore';
 import { useTransactionStore } from '@kogami/client/stores/transactionStore';
+import { downloadCSV, parseTransactionLine } from '@kogami/client/utilities/csv';
 
 import type { CurrencyCode } from '@kogami/client/app/constants';
 import type { Transaction } from '@kogami/client/stores/transactionStore';
@@ -140,18 +141,11 @@ export const TransactionView = () => {
     overscan: 10,
   });
 
-  const exportCSV = () => {
-    const headers = ['Date', 'Action', 'Description', 'Category', 'Currency', 'Amount'];
-    const rows = transactions.map((tx) => [tx.date, tx.action, tx.description, tx.category, tx.currency, tx.amount]);
-    const csvContent = [headers, ...rows].map((e) => e.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'transactions.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const exportCSV = () =>
+    downloadCSV('transactions.csv', [
+      ['Date', 'Action', 'Description', 'Category', 'Currency', 'Amount'],
+      ...transactions.map((tx) => [tx.date, tx.action, tx.description, tx.category, tx.currency, tx.amount]),
+    ]);
 
   return (
     <div className="view-container">
@@ -207,42 +201,7 @@ export const TransactionView = () => {
         template="Date,Action,Description,Category,Currency,Amount"
         example="2024-01-01,IN,Lunch,Food,USD,15.50"
         minColumns={5}
-        parseLine={(parts, lineIdx) => {
-          const [date, description, category, currency, actionOrAmount, amountMaybe] = parts;
-
-          if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-            throw new Error(`Line ${lineIdx}: Invalid date format. Expected YYYY-MM-DD.`);
-          }
-
-          let action: 'IN' | 'OUT' = 'IN';
-          let rawAmount = '0';
-
-          if (parts.length >= 6) {
-            action = actionOrAmount?.toUpperCase() === 'OUT' ? 'OUT' : 'IN';
-            rawAmount = amountMaybe || '0';
-          } else {
-            // Backward compatibility or simpler format: check if amount is negative
-            const parsed = parseFloat(actionOrAmount || '0');
-            action = parsed < 0 ? 'OUT' : 'IN';
-            rawAmount = Math.abs(parsed).toString();
-          }
-
-          const parsedAmount = Math.abs(parseFloat(rawAmount));
-
-          if (isNaN(parsedAmount)) {
-            throw new Error(`Line ${lineIdx}: Amount must be a number.`);
-          }
-
-          return {
-            id: crypto.randomUUID(),
-            date,
-            action,
-            description: description || '',
-            category: category || '',
-            currency: (currency?.toUpperCase() as CurrencyCode) || 'USD',
-            amount: parsedAmount,
-          };
-        }}
+        parseLine={parseTransactionLine}
       />
 
       <VirtualTable

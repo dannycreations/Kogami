@@ -15,13 +15,9 @@ export const makeStoreManager = <T extends DataWithRange>(filePath: string) => {
     const fs = yield* FileSystem.FileSystem;
     if (!(yield* fs.exists(filePath))) return (cache = {} as Store<T>);
 
+    // A missing or malformed store is treated as empty, which the scraper repopulates on demand.
     cache = yield* fs.readFileString(filePath).pipe(
-      Effect.flatMap((content) =>
-        Effect.try({
-          try: () => JSON.parse(content) as Store<T>,
-          catch: () => ({}) as Store<T>,
-        }),
-      ),
+      Effect.map((content) => JSON.parse(content) as Store<T>),
       Effect.orElseSucceed(() => ({}) as Store<T>),
     );
     return cache;

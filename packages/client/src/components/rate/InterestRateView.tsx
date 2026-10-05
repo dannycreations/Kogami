@@ -1,9 +1,8 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Effect } from 'effect';
-import { FetchHttpClient, HttpClient, HttpClientRequest } from 'effect/http';
 import { AlertCircle } from 'lucide-react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useMemo, useRef, useState } from 'react';
 
+import { useRateData } from '@kogami/client/components/rate/useRateData';
 import { FilterBar, VirtualTable } from '@kogami/client/components/shared/DataView';
 
 import type { InterestRateData, InterestRateEntry } from '@kogami/server/types/rates';
@@ -27,45 +26,10 @@ const RateRow = memo(({ entry, style }: { entry: InterestRateEntry; style?: Reac
 });
 
 export const InterestRateView = () => {
-  const [date, setDate] = useState<string>(() => new Date().toISOString().split('T')[0]!);
   const [search, setSearch] = useState<string>('');
-  const [data, setData] = useState<InterestRateData | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const { date, onDateChange, data, loading, error } = useRateData<InterestRateData>('/interest-rates');
 
   const parentRef = useRef<HTMLDivElement>(null);
-
-  const fetchInterestRates = useCallback((targetDate: string) => {
-    setLoading(true);
-    setError(null);
-
-    const program = Effect.gen(function* () {
-      const client = yield* HttpClient.HttpClient;
-      const response = yield* HttpClientRequest.get(`http://localhost:1730/interest-rates?date=${targetDate}`).pipe(
-        client.execute,
-        Effect.flatMap((res) => res.json),
-      );
-      return response as unknown as InterestRateData;
-    }).pipe(Effect.provide(FetchHttpClient.layer));
-
-    Effect.runPromise(program)
-      .then((result) => {
-        setData(result);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(String(err));
-        setLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    const d = date.trim();
-    if (!d) return;
-
-    const timer = setTimeout(() => fetchInterestRates(d), 500);
-    return () => clearTimeout(timer);
-  }, [date, fetchInterestRates]);
 
   const filteredEntries = useMemo(() => {
     const entries = data?.entries;
@@ -86,7 +50,7 @@ export const InterestRateView = () => {
     <div className="view-container">
       <FilterBar
         date={date}
-        onDateChange={setDate}
+        onDateChange={onDateChange}
         search={search}
         onSearchChange={setSearch}
         searchLabel="Search Tags"

@@ -117,16 +117,12 @@ export const VirtualTable = memo(
             onScroll={handleScroll}
             ref={(el) => {
               if (el) {
-                const width = el.offsetWidth - el.clientWidth;
-                (el.closest('.table-container') as HTMLElement)?.style.setProperty('--scrollbar-width', `${width}px`);
-              }
-              if (parentRef) {
-                if (typeof parentRef === 'function') {
-                  (parentRef as any)(el);
-                } else {
-                  (parentRef as any).current = el;
+                const container = el.closest<HTMLElement>('.table-container');
+                if (container) {
+                  container.style.setProperty('--scrollbar-width', `${el.offsetWidth - el.clientWidth}px`);
                 }
               }
+              parentRef.current = el;
             }}
           >
             <div className="min-w-full w-max">

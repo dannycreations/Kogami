@@ -43,15 +43,17 @@ export const ImportCSVModal = <T extends { id: string }>({
       const keywords = template.toLowerCase().split(',');
       const hasHeader = keywords.some((k) => firstLine.includes(k.trim()));
       const dataLines = hasHeader ? lines.slice(1) : lines;
+      const firstDataLineNumber = hasHeader ? 2 : 1;
 
       const newEntries: T[] = dataLines.map((line, index) => {
         const parts = line.split(',').map((p) => p.trim());
+        const lineNumber = index + firstDataLineNumber;
 
         if (parts.length < minColumns) {
-          throw new Error(`Line ${index + (hasHeader ? 2 : 1)}: Invalid number of columns. Expected at least ${minColumns}.`);
+          throw new Error(`Line ${lineNumber}: Invalid number of columns. Expected at least ${minColumns}.`);
         }
 
-        return parseLine(parts, index + (hasHeader ? 2 : 1));
+        return parseLine(parts, lineNumber);
       });
 
       onImport(newEntries);
@@ -87,7 +89,7 @@ export const ImportCSVModal = <T extends { id: string }>({
       const text = await file.text();
       setCsvData(text);
       setError(null);
-    } catch (err) {
+    } catch {
       setError('Failed to read the file.');
     }
   };
