@@ -22,6 +22,8 @@ const SOURCES: Readonly<Record<RateType, { readonly url: string; readonly file: 
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
 
+const WEEKLY_RANGE_DAYS = 7;
+
 export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: (dom: ReturnType<DOMParser['parseFromString']>) => T[]) => {
   const sourceUrl = SOURCES[type].url;
   const filePath = `data/${SOURCES[type].file}`;
@@ -72,6 +74,7 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
 
       let existing: BaseRateData<T> | undefined;
       let fallback: BaseRateData<T> | undefined;
+      let fallbackDays = Infinity;
 
       for (const key in store) {
         const data = store[key]!;
@@ -80,10 +83,11 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
         const days = getDayDiff(data.startDate, data.endDate);
         // Interest ranges are stored one per month, so any covering range is authoritative.
         // Exchange ranges are weekly, so short ranges win over the longer holiday-stretched ones.
-        const isAuthoritative = type === 'interest' || days <= 7;
+        const isAuthoritative = type === 'interest' || days <= WEEKLY_RANGE_DAYS;
 
-        if (!fallback || days < getDayDiff(fallback.startDate, fallback.endDate)) {
+        if (days < fallbackDays) {
           fallback = data;
+          fallbackDays = days;
         }
 
         if (isAuthoritative || date > today) {
@@ -115,20 +119,16 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
       }
 
       const updatedStore: Store<BaseRateData<T>> = { ...store };
+      const duration = getDayDiff(data.startDate, data.endDate);
 
-      if (type === 'exchange') {
-        const duration = getDayDiff(data.startDate, data.endDate);
-        if (duration <= 7) {
-          const start = data.startDate;
-          const end = data.endDate;
-          for (const key in updatedStore) {
-            const existingData = updatedStore[key]!;
-            if (start >= existingData.startDate && end <= existingData.endDate) {
-              const existingDuration = getDayDiff(existingData.startDate, existingData.endDate);
-              if (existingDuration > duration) {
-                yield* Effect.logInfo(`Removing redundant range: ${key}`);
-                delete updatedStore[key];
-              }
+      if (type === 'exchange' && duration <= WEEKLY_RANGE_DAYS) {
+        for (const key in updatedStore) {
+          const existingData = updatedStore[key]!;
+          if (data.startDate >= existingData.startDate && data.endDate <= existingData.endDate) {
+            const existingDuration = getDayDiff(existingData.startDate, existingData.endDate);
+            if (existingDuration > duration) {
+              yield* Effect.logInfo(`Removing redundant range: ${key}`);
+              delete updatedStore[key];
             }
           }
         }
@@ -140,7 +140,7 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
       return data;
     });
 
-  return { getOrScrape, getStore: manager.getStore, filePath };
+  return { getOrScrape, getStore: manager.getStore };
 };
 
 export type Scraper<T extends BaseRateEntry = BaseRateEntry> = ReturnType<typeof makeScraper<T>>;

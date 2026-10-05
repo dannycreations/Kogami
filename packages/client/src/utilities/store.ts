@@ -1,4 +1,6 @@
-export const binarySearchIndex = <T>(array: readonly T[], compare: (item: T) => number): number => {
+export const newestFirst = <T extends { id: string; date: string }>(a: T, b: T) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id);
+
+const binarySearchIndex = <T>(array: readonly T[], compare: (candidate: T) => number): number => {
   let low = 0;
   let high = array.length - 1;
 
@@ -8,9 +10,9 @@ export const binarySearchIndex = <T>(array: readonly T[], compare: (item: T) => 
 
     if (cmp === 0) return mid;
     if (cmp < 0) {
-      low = mid + 1;
-    } else {
       high = mid - 1;
+    } else {
+      low = mid + 1;
     }
   }
 
@@ -37,27 +39,17 @@ export const updateSorted = <T extends { id: string }>(
   const oldItem = array[index]!;
   const updated = normalize({ ...oldItem, ...updates });
 
-  // Check for deep equality to avoid unnecessary state updates
-  // Only checking specific fields might be brittle, so we do a shallow check of normalized objects
+  // An edit that normalizes back to the same row must not produce a new array,
+  // otherwise every keystroke re-renders the table.
   const keys = Object.keys(updated) as (keyof T)[];
-  let changed = false;
-  for (const key of keys) {
-    if (updated[key] !== oldItem[key]) {
-      changed = true;
-      break;
-    }
-  }
-
-  if (!changed) return null;
+  if (!keys.some((key) => updated[key] !== oldItem[key])) return null;
 
   const next = [...array];
-  // If the sorting criteria didn't change (e.g. date didn't change), just replace in-place
   if (compare(updated, oldItem) === 0) {
     next[index] = updated;
     return next;
   }
 
-  // Otherwise, remove and re-insert at correct position
   next.splice(index, 1);
   const insertIdx = binarySearchIndex(next, (item) => compare(updated, item));
   next.splice(insertIdx, 0, updated);

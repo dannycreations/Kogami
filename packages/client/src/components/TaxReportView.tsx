@@ -7,6 +7,8 @@ import { VirtualTable } from '@kogami/client/components/shared/DataView';
 import { useInvestmentStore } from '@kogami/client/stores/investmentStore';
 import { useSettingStore } from '@kogami/client/stores/settingsStore';
 
+import type { ExchangeRateData } from '@kogami/server/types/rates';
+
 interface YearlyReport {
   readonly year: number;
   realizedProfit: number;
@@ -15,7 +17,6 @@ interface YearlyReport {
   holdings: {
     symbol: string;
     quantity: number;
-    costBasisOriginal: number;
     valuePreferredAtDec31: number;
   }[];
   profitBreakdown: {
@@ -25,11 +26,9 @@ interface YearlyReport {
 }
 
 interface InventoryItem {
-  readonly symbol: string;
   readonly quantity: number;
   readonly price: number;
   readonly currency: string;
-  readonly date: string;
   readonly rateAtBuy: number;
 }
 
@@ -168,10 +167,7 @@ const SummaryRow = memo(
 );
 
 export const TaxReportView = () => {
-  const [exchangeRates, setExchangeRates] = useState<Record<
-    string,
-    { startDate: string; endDate: string; entries: { currency: string; rate: number }[] }
-  > | null>(null);
+  const [exchangeRates, setExchangeRates] = useState<Record<string, ExchangeRateData> | null>(null);
   const transactions = useInvestmentStore((state) => state.transactions);
   const preferredCurrency = useSettingStore((state) => state.preferredCurrency);
   const parentRef = useRef<HTMLDivElement>(null);
@@ -305,11 +301,9 @@ export const TaxReportView = () => {
             inventory.set(symbol, inv);
           }
           inv.items.push({
-            symbol,
             quantity: Math.abs(tx.quantity || 0),
             price: tx.price || 0,
             currency: tx.currency,
-            date: tx.date,
             rateAtBuy: rateToPreferred,
           });
         } else if (action === 'SELL') {
@@ -351,7 +345,6 @@ export const TaxReportView = () => {
         if (inv.nextIdx >= inv.items.length) continue;
 
         let totalQuantity = 0;
-        let totalCostBasis = 0;
         let totalValuePreferred = 0;
 
         for (let i = inv.nextIdx; i < inv.items.length; i++) {
@@ -363,7 +356,6 @@ export const TaxReportView = () => {
           }
 
           totalQuantity += item.quantity;
-          totalCostBasis += item.quantity * item.price * item.rateAtBuy;
           totalValuePreferred += item.quantity * item.price * dec31Rate;
         }
 
@@ -371,7 +363,6 @@ export const TaxReportView = () => {
           currentHoldings.push({
             symbol,
             quantity: totalQuantity,
-            costBasisOriginal: totalCostBasis,
             valuePreferredAtDec31: totalValuePreferred,
           });
           yearEndHoldingsValue += totalValuePreferred;

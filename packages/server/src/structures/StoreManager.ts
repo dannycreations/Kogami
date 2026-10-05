@@ -34,10 +34,7 @@ export const makeStoreManager = <T extends DataWithRange>(filePath: string) => {
       const fs = yield* FileSystem.FileSystem;
       const path = yield* Path.Path;
 
-      const dir = path.dirname(filePath);
-      if (!(yield* fs.exists(dir))) {
-        yield* fs.makeDirectory(dir, { recursive: true });
-      }
+      yield* fs.makeDirectory(path.dirname(filePath), { recursive: true });
 
       // Sort keys to maintain predictable file structure and improve git diffs
       const sortedStore = Object.fromEntries(Object.entries(store).sort(([a], [b]) => b.localeCompare(a)));

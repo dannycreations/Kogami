@@ -1,12 +1,12 @@
 import { join } from 'node:path';
-import { Cause, Layer, Logger, LogLevel, References, Schema } from 'effect';
+import { Cause, Layer, Logger, LogLevel, References } from 'effect';
 import pino from 'pino';
 import pinoPretty from 'pino-pretty';
 
 import type { ReadonlyRecord } from 'effect/Record';
-import type { Level, StreamEntry } from 'pino';
+import type { LevelWithSilent, StreamEntry } from 'pino';
 
-export const PINO_LEVEL_MAP: ReadonlyRecord<string, LogLevel.LogLevel> = {
+const PINO_LEVEL_MAP: ReadonlyRecord<string, LogLevel.LogLevel> = {
   trace: 'Trace',
   debug: 'Debug',
   info: 'Info',
@@ -16,7 +16,7 @@ export const PINO_LEVEL_MAP: ReadonlyRecord<string, LogLevel.LogLevel> = {
   silent: 'None',
 };
 
-export const EFFECT_LEVEL_MAP: ReadonlyRecord<LogLevel.LogLevel, pino.LevelWithSilent> = {
+const EFFECT_LEVEL_MAP: ReadonlyRecord<LogLevel.LogLevel, LevelWithSilent> = {
   All: 'trace',
   Trace: 'trace',
   Debug: 'debug',
@@ -27,60 +27,27 @@ export const EFFECT_LEVEL_MAP: ReadonlyRecord<LogLevel.LogLevel, pino.LevelWithS
   None: 'silent',
 };
 
-export const LoggerOptions = Schema.Struct({
-  dir: Schema.optional(Schema.String),
-  level: Schema.optional(Schema.String as unknown as Schema.Schema<Level>),
-  trace: Schema.optional(Schema.Boolean),
-  pretty: Schema.optional(Schema.Boolean),
-  exception: Schema.optional(Schema.Boolean),
-  rejection: Schema.optional(Schema.Boolean),
-});
-
-export type LoggerOptions = Schema.Schema.Type<typeof LoggerOptions>;
-
-export const makeLoggerClient = (options: LoggerOptions = {}): pino.Logger => {
-  const {
-    dir = join(process.cwd(), 'logs'),
-    level = (process.env.NODE_ENV === 'development' ? 'debug' : 'info') as Level,
-    trace = false,
-    pretty = true,
-    exception = true,
-    rejection = true,
-  } = options;
+export const makeLoggerClient = (): pino.Logger => {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const level: LevelWithSilent = isDevelopment ? 'debug' : 'info';
 
   const streams: ReadonlyArray<StreamEntry> = [
     {
       level: 'warn',
       stream: pino.destination({
         mkdir: true,
-        dest: join(dir, 'errors.log'),
+        dest: join(process.cwd(), 'logs', 'errors.log'),
       }),
     },
-    ...(trace
-      ? [
-          {
-            level: 'trace' as const,
-            stream: pino.destination({
-              mkdir: true,
-              dest: join(dir, 'traces.log'),
-            }),
-          },
-        ]
-      : []),
-    pretty
-      ? ({
-          level,
-          stream: pinoPretty({
-            colorize: true,
-            translateTime: 'SYS:HH:MM:ss',
-            sync: process.env.NODE_ENV === 'development',
-            singleLine: process.env.NODE_ENV === 'production',
-          }),
-        } as StreamEntry)
-      : ({
-          level,
-          stream: process.stdout,
-        } as StreamEntry),
+    {
+      level,
+      stream: pinoPretty({
+        colorize: true,
+        translateTime: 'SYS:HH:MM:ss',
+        sync: isDevelopment,
+        singleLine: process.env.NODE_ENV === 'production',
+      }),
+    },
   ];
 
   const instance = pino(
@@ -107,13 +74,13 @@ export const makeLoggerClient = (options: LoggerOptions = {}): pino.Logger => {
     pino.multistream(streams as StreamEntry[]),
   );
 
-  if (exception && process.listenerCount('uncaughtException') === 0) {
+  if (process.listenerCount('uncaughtException') === 0) {
     process.on('uncaughtException', (error, origin) => {
       instance.fatal({ error, origin }, 'UncaughtException');
     });
   }
 
-  if (rejection && process.listenerCount('unhandledRejection') === 0) {
+  if (process.listenerCount('unhandledRejection') === 0) {
     process.on('unhandledRejection', (reason, promise) => {
       instance.fatal({ reason, promise }, 'UnhandledRejection');
     });

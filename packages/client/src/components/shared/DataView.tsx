@@ -1,5 +1,24 @@
-import { Calendar, RefreshCw, Search } from 'lucide-react';
+import { AlertCircle, Calendar, RefreshCw, Search } from 'lucide-react';
 import { memo, useCallback, useRef } from 'react';
+
+export const virtualRowStyle = (row: { start: number; size: number }): React.CSSProperties => ({
+  position: 'absolute',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: `${row.size}px`,
+  transform: `translateY(${row.start}px)`,
+});
+
+export const SyncErrorBanner = memo(({ message }: { message: string }) => (
+  <div className="bg-red-50 border-l-2 border-red-200 text-red-800 p-3 rounded-r text-[13px] flex items-start shadow-sm mt-4">
+    <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-500 shrink-0" />
+    <div>
+      <p className="font-black uppercase tracking-tight text-[11px]">Sync Error</p>
+      <p className="mt-0.5 leading-tight">{message}</p>
+    </div>
+  </div>
+));
 
 export const FilterBar = memo(
   ({

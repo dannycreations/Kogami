@@ -1,9 +1,8 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { AlertCircle } from 'lucide-react';
 import { memo, useMemo, useRef, useState } from 'react';
 
 import { useRateData } from '@kogami/client/components/rate/useRateData';
-import { FilterBar, VirtualTable } from '@kogami/client/components/shared/DataView';
+import { FilterBar, SyncErrorBanner, virtualRowStyle, VirtualTable } from '@kogami/client/components/shared/DataView';
 
 import type { InterestRateData, InterestRateEntry } from '@kogami/server/types/rates';
 
@@ -59,15 +58,7 @@ export const InterestRateView = () => {
         period={data ? { startDate: data.startDate, endDate: data.endDate } : undefined}
       />
 
-      {error && (
-        <div className="bg-red-50 border-l-2 border-red-200 text-red-800 p-3 rounded-r text-[13px] flex items-start shadow-sm mt-4">
-          <AlertCircle className="h-4 w-4 mr-2 mt-0.5 text-red-500 shrink-0" />
-          <div>
-            <p className="font-black uppercase tracking-tight text-[11px]">Sync Error</p>
-            <p className="mt-0.5 leading-tight">{error}</p>
-          </div>
-        </div>
-      )}
+      {error && <SyncErrorBanner message={error} />}
 
       <VirtualTable
         count={virtualizer.getVirtualItems().length}
@@ -84,20 +75,7 @@ export const InterestRateView = () => {
         }
         renderRow={(index) => {
           const virtualRow = virtualizer.getVirtualItems()[index]!;
-          return (
-            <RateRow
-              key={virtualRow.key}
-              entry={filteredEntries[virtualRow.index]!}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            />
-          );
+          return <RateRow key={virtualRow.key} entry={filteredEntries[virtualRow.index]!} style={virtualRowStyle(virtualRow)} />;
         }}
         footer={
           <>

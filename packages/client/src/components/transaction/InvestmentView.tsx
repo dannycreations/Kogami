@@ -3,7 +3,7 @@ import { Download, Plus, Search, Trash2, Upload, X } from 'lucide-react';
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 
 import { CURRENCIES } from '@kogami/client/app/constants';
-import { VirtualTable } from '@kogami/client/components/shared/DataView';
+import { virtualRowStyle, VirtualTable } from '@kogami/client/components/shared/DataView';
 import { ImportCSVModal } from '@kogami/client/components/shared/ImportModal';
 import { useInvestmentStore } from '@kogami/client/stores/investmentStore';
 import { useSettingStore } from '@kogami/client/stores/settingsStore';
@@ -232,14 +232,7 @@ export const InvestmentView = () => {
               transaction={filteredTransactions[virtualRow.index]!}
               onUpdate={updateTransaction}
               onDelete={deleteTransaction}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: `${virtualRow.size}px`,
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
+              style={virtualRowStyle(virtualRow)}
             />
           );
         }}

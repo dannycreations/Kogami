@@ -22,7 +22,17 @@ import { TaxReportView } from '@kogami/client/components/TaxReportView';
 import { InvestmentView } from '@kogami/client/components/transaction/InvestmentView';
 import { TransactionView } from '@kogami/client/components/transaction/TransactionView';
 
-const NAV_LIST = [
+import type { LucideIcon } from 'lucide-react';
+
+interface NavItem {
+  readonly id: string;
+  readonly name: string;
+  readonly icon: LucideIcon;
+  readonly parentId?: string;
+  readonly isCategory?: boolean;
+}
+
+const NAV_LIST: readonly NavItem[] = [
   { id: 'dashboard', name: 'Overview', icon: LayoutDashboard },
   { id: 'transactions', name: 'Transactions', icon: ArrowRightLeft, isCategory: true },
   { id: 'general-transactions', name: 'General', icon: Banknote, parentId: 'transactions' },
@@ -32,18 +42,26 @@ const NAV_LIST = [
   { id: 'interest-rates', name: 'Interest Rates', icon: Banknote, parentId: 'rates' },
   { id: 'reports', name: 'Tax Reports', icon: FileText },
   { id: 'settings', name: 'Settings', icon: Settings },
-] as const;
+];
+
+const VIEWS: Readonly<Record<string, () => React.JSX.Element>> = {
+  'exchange-rates': ExchangeRateView,
+  'interest-rates': InterestRateView,
+  'general-transactions': TransactionView,
+  'investment-transactions': InvestmentView,
+  reports: TaxReportView,
+  settings: SettingView,
+};
 
 export const KogamiApp = () => {
-  const [activeTab, setActiveTab] = useState<(typeof NAV_LIST)[number]['id']>('dashboard');
-  const [expandedCategory, setExpandedCategory] = useState<string | null>(() => {
-    const activeItem = NAV_LIST.find((item) => item.id === activeTab);
-    return activeItem && 'parentId' in activeItem ? activeItem.parentId : null;
-  });
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
   const toggleCategory = (id: string) => {
     setExpandedCategory((prev) => (prev === id ? null : id));
   };
+
+  const ActiveView = VIEWS[activeTab];
 
   return (
     <div className="min-h-screen flex text-surface-900">
@@ -64,34 +82,26 @@ export const KogamiApp = () => {
           <div className="px-3 mb-2">
             <nav className="space-y-0.5">
               {NAV_LIST.map((item) => {
-                const isCategory = 'isCategory' in item && item.isCategory;
-                const parentId = 'parentId' in item ? item.parentId : undefined;
-                const isExpanded = isCategory ? expandedCategory === item.id : true;
-                const isVisible = !parentId || expandedCategory === parentId;
+                const { id, icon: Icon, isCategory = false, parentId } = item;
+                const isExpanded = isCategory ? expandedCategory === id : true;
 
-                if (!isVisible) return null;
+                if (parentId && expandedCategory !== parentId) return null;
 
                 return (
                   <button
-                    key={item.id}
-                    onClick={() => {
-                      if (isCategory) {
-                        toggleCategory(item.id);
-                      } else {
-                        setActiveTab(item.id);
-                      }
-                    }}
+                    key={id}
+                    onClick={() => (isCategory ? toggleCategory(id) : setActiveTab(id))}
                     className={`w-full flex items-center space-x-2.5 px-2 py-1.5 rounded transition-all text-sm group ${
                       parentId ? 'ml-4 w-[calc(100%-1rem)]' : ''
                     } ${
-                      activeTab === item.id
+                      activeTab === id
                         ? 'bg-brand-200/50 text-brand-900 font-bold shadow-sm ring-1 ring-brand-200/50'
                         : 'text-surface-600 hover:bg-surface-100/80 hover:text-surface-900'
                     }`}
                   >
-                    <item.icon
-                      className={`h-4 w-4 ${activeTab === item.id ? 'text-brand-700' : 'text-surface-400 group-hover:text-surface-600'}`}
-                      strokeWidth={activeTab === item.id ? 2 : 1.5}
+                    <Icon
+                      className={`h-4 w-4 ${activeTab === id ? 'text-brand-700' : 'text-surface-400 group-hover:text-surface-600'}`}
+                      strokeWidth={activeTab === id ? 2 : 1.5}
                     />
                     <span className="flex-1 text-left">{item.name}</span>
                     {isCategory && (
@@ -113,18 +123,8 @@ export const KogamiApp = () => {
         </header>
 
         <div className="flex-1 p-6 w-full overflow-hidden">
-          {activeTab === 'exchange-rates' ? (
-            <ExchangeRateView />
-          ) : activeTab === 'interest-rates' ? (
-            <InterestRateView />
-          ) : activeTab === 'general-transactions' ? (
-            <TransactionView />
-          ) : activeTab === 'investment-transactions' ? (
-            <InvestmentView />
-          ) : activeTab === 'reports' ? (
-            <TaxReportView />
-          ) : activeTab === 'settings' ? (
-            <SettingView />
+          {ActiveView ? (
+            <ActiveView />
           ) : (
             <div className="h-64 flex flex-col items-center justify-center bg-white rounded border border-dashed border-surface-300 text-surface-500">
               <FileSpreadsheet className="h-8 w-8 text-surface-300 mb-3" strokeWidth={1} />

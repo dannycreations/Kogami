@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-import { insertSorted, updateSorted } from '@kogami/client/utilities/store';
+import { insertSorted, newestFirst, updateSorted } from '@kogami/client/utilities/store';
 
 import type { CurrencyCode } from '@kogami/client/app/constants';
 
@@ -23,8 +23,6 @@ interface TransactionState {
   readonly setTransactions: (transactions: Transaction[]) => void;
 }
 
-const compareTransactions = (a: Transaction, b: Transaction) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id);
-
 const normalizeTransaction = (tx: Transaction): Transaction => ({
   ...tx,
   description: tx.description.trim(),
@@ -38,15 +36,13 @@ export const useTransactionStore = create<TransactionState>()(
   persist(
     (set) => ({
       transactions: [],
-      addTransaction: (transaction) => {
-        const normalized = normalizeTransaction(transaction);
+      addTransaction: (transaction) =>
         set((state) => ({
-          transactions: insertSorted(state.transactions, normalized, compareTransactions),
-        }));
-      },
+          transactions: insertSorted(state.transactions, normalizeTransaction(transaction), newestFirst),
+        })),
       updateTransaction: (id, updates) =>
         set((state) => {
-          const transactions = updateSorted(state.transactions, id, updates, normalizeTransaction, compareTransactions);
+          const transactions = updateSorted(state.transactions, id, updates, normalizeTransaction, newestFirst);
           return transactions ? { transactions } : state;
         }),
       deleteTransaction: (id) =>
@@ -55,11 +51,15 @@ export const useTransactionStore = create<TransactionState>()(
         })),
       setTransactions: (transactions) =>
         set({
-          transactions: transactions.map(normalizeTransaction).sort(compareTransactions),
+          transactions: transactions.map(normalizeTransaction).sort(newestFirst),
         }),
     }),
     {
       name: 'kogami_general_transactions',
+      merge: (persisted, current) => ({
+        ...current,
+        transactions: [...(persisted as TransactionState).transactions].sort(newestFirst),
+      }),
     },
   ),
 );
