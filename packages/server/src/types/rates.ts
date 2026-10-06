@@ -1,5 +1,5 @@
 export interface BaseRateEntry {
-  readonly rate: number;
+  readonly rate: number | null;
 }
 
 export interface ExchangeRateEntry extends BaseRateEntry {

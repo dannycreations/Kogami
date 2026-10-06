@@ -1,9 +1,9 @@
-import { Data, Effect } from 'effect';
+import { Data, Duration, Effect } from 'effect';
 import { HttpClient, HttpClientRequest } from 'effect/http';
 import { DOMParser } from 'linkedom';
 
 import { makeStoreManager } from '@kogami/server/structures/StoreManager';
-import { getDayDiff, parseDateRange } from '@kogami/server/utilities/date';
+import { addDays, findFirstUncoveredDate, getDayDiff, parseDateRange } from '@kogami/server/utilities/date';
 
 import type { Store } from '@kogami/server/structures/StoreManager';
 import type { BaseRateData, BaseRateEntry } from '@kogami/server/types/rates';
@@ -13,11 +13,12 @@ type RateType = 'exchange' | 'interest';
 export class ScraperError extends Data.TaggedError('ScraperError')<{
   readonly message: string;
   readonly cause?: unknown;
+  readonly unavailable?: boolean;
 }> {}
 
-const SOURCES: Readonly<Record<RateType, { readonly url: string; readonly file: string }>> = {
-  exchange: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak', file: 'exchange-rates.json' },
-  interest: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/tarif-bunga', file: 'interest-rates.json' },
+const SOURCES: Readonly<Record<RateType, { readonly url: string; readonly file: string; readonly since: string }>> = {
+  exchange: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/kurs-pajak', file: 'exchange-rates.json', since: '2000-09-10' },
+  interest: { url: 'https://fiskal.kemenkeu.go.id/informasi-publik/tarif-bunga', file: 'interest-rates.json', since: '2020-12-01' },
 };
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/150.0.0.0 Safari/537.36';
@@ -49,7 +50,8 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
       const range = parseDateRange(rangeText);
 
       if (!range) {
-        return yield* new ScraperError({ message: `Could not parse date range from: "${rangeText}"` });
+        // No validity period at all: the source has no data on record for this date.
+        return yield* new ScraperError({ message: `Could not parse date range from: "${rangeText}"`, unavailable: true });
       }
 
       const entries = parseRows(dom);
@@ -57,7 +59,7 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
         // A page that parses into zero rows is a broken layout, not an empty rate table.
         // Failing here lets getOrScrape fall back instead of storing a range that serves
         // clients an empty result for every date it covers.
-        return yield* new ScraperError({ message: `No rate rows parsed from: ${url}` });
+        return yield* new ScraperError({ message: `No rate rows parsed from: ${url}`, unavailable: true });
       }
 
       return {
@@ -140,7 +142,70 @@ export const makeScraper = <T extends BaseRateEntry>(type: RateType, parseRows: 
       return data;
     });
 
-  return { getOrScrape, getStore: manager.getStore };
+  return { getOrScrape, getStore: manager.getStore, since: SOURCES[type].since };
 };
 
 export type Scraper<T extends BaseRateEntry = BaseRateEntry> = ReturnType<typeof makeScraper<T>>;
+
+const REPAIR_WINDOW_DAYS = 400;
+const SCRAPE_DELAY = '500 millis';
+
+export const fillGaps = <T extends BaseRateEntry>(
+  label: string,
+  scraper: Scraper<T>,
+  today: string,
+  windowDays: number = REPAIR_WINDOW_DAYS,
+  delay: Duration.Input = SCRAPE_DELAY,
+) =>
+  Effect.gen(function* () {
+    const windowStart = addDays(today, -windowDays);
+
+    // Re-read the store on every call: saveStore swaps in a new object on each write.
+    const nextUncovered = (from: string) => Effect.map(scraper.getStore, (store) => findFirstUncoveredDate(Object.values(store), from, today));
+
+    const store = yield* scraper.getStore;
+    // An empty store has no history to lean on, so fetch everything the source publishes
+    // rather than only the repair window.
+    let cursor = Object.keys(store).length === 0 ? scraper.since : windowStart;
+    let unfilled = 0;
+
+    for (;;) {
+      const missing = yield* nextUncovered(cursor);
+      if (missing === null) break;
+
+      yield* Effect.sleep(delay);
+      yield* Effect.logInfo(`Scraping ${label} rates for ${missing}`);
+
+      const result = yield* Effect.result(scraper.getOrScrape(missing));
+
+      if (result._tag === 'Failure') {
+        // Older than the repair window means the source simply never published that date,
+        // which is a permanent archive gap rather than something a later run could fix.
+        if (result.failure._tag === 'ScraperError' && result.failure.unavailable === true && missing < windowStart) {
+          yield* Effect.logWarning(`No ${label} rates published for ${missing}; skipping`);
+        } else {
+          unfilled++;
+          yield* Effect.logError(`Prefetch failed for ${label} ${missing}: ${String(result.failure)}`);
+        }
+        // Step over this date so one missing date cannot abandon the rest of the run.
+        cursor = addDays(missing, 1);
+        continue;
+      }
+
+      const { startDate, endDate, entries } = result.success;
+      yield* Effect.logInfo(`Stored ${label} rates [${startDate} to ${endDate}] with ${entries.length} entries`);
+
+      // A fetch that succeeded without covering the requested date leaves the hole
+      // open. Count it and step over it, otherwise this loop spins on a single date.
+      if ((yield* nextUncovered(missing)) === missing) {
+        unfilled++;
+        yield* Effect.logError(`Prefetch made no progress for ${label} ${missing}; leaving it unfilled`);
+        cursor = addDays(missing, 1);
+        continue;
+      }
+
+      cursor = missing;
+    }
+
+    return unfilled;
+  });

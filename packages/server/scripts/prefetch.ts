@@ -4,68 +4,22 @@ import { FetchHttpClient } from 'effect/http';
 
 import { scraper as exchangeScrape } from '@kogami/server/api/exchange-rates/Handler';
 import { scraper as interestScrape } from '@kogami/server/api/interest-rates/Handler';
+import { fillGaps } from '@kogami/server/helpers/Scraper';
 import { LoggerClientLayer, makeLoggerClient } from '@kogami/server/structures/LoggerClient';
-import { addDays, findFirstUncoveredDate } from '@kogami/server/utilities/date';
-
-import type { Scraper } from '@kogami/server/helpers/Scraper';
-import type { BaseRateEntry } from '@kogami/server/types/rates';
-
-const REPAIR_WINDOW_DAYS = 400;
-const SCRAPE_DELAY = '500 millis';
 
 class PrefetchIncompleteError extends Data.TaggedError('PrefetchIncompleteError')<{
   readonly message: string;
 }> {}
 
-const fillGaps = <T extends BaseRateEntry>(label: string, scraper: Scraper<T>) =>
-  Effect.gen(function* () {
-    const today = new Date().toISOString().split('T')[0]!;
-    const windowStart = addDays(today, -REPAIR_WINDOW_DAYS);
-
-    const nextMissing = Effect.map(scraper.getStore, (store) => {
-      const ranges = Object.values(store);
-
-      let newestEnd = '';
-      for (const range of ranges) {
-        if (range.endDate > newestEnd) newestEnd = range.endDate;
-      }
-
-      const afterNewest = newestEnd ? addDays(newestEnd, 1) : today;
-      return findFirstUncoveredDate(ranges, afterNewest > windowStart ? afterNewest : windowStart, today);
-    });
-
-    let missing = yield* nextMissing;
-    let failures = 0;
-
-    while (missing !== null) {
-      yield* Effect.sleep(SCRAPE_DELAY);
-      yield* Effect.logInfo(`Scraping ${label} rates for ${missing}`);
-
-      const result = yield* Effect.result(scraper.getOrScrape(missing));
-      if (result._tag === 'Failure') {
-        failures++;
-        yield* Effect.logError(`Prefetch failed for ${label} ${missing}: ${String(result.failure)}`);
-        break;
-      }
-
-      const { startDate, endDate, entries } = result.success;
-      yield* Effect.logInfo(`Stored ${label} rates [${startDate} to ${endDate}] with ${entries.length} entries`);
-
-      const next = yield* nextMissing;
-      missing = next !== null && next > missing ? next : null;
-    }
-
-    return failures;
-  });
-
 const prefetch = Effect.gen(function* () {
   yield* Effect.logInfo('Starting prefetch validation and repair...');
 
-  const failures = (yield* fillGaps('exchange', exchangeScrape)) + (yield* fillGaps('interest', interestScrape));
+  const today = new Date().toISOString().split('T')[0]!;
+  const unfilled = (yield* fillGaps('exchange', exchangeScrape, today)) + (yield* fillGaps('interest', interestScrape, today));
 
-  if (failures > 0) {
+  if (unfilled > 0) {
     // Exiting non-zero is what makes a run that fetched nothing visible in CI.
-    return yield* new PrefetchIncompleteError({ message: `${failures} prefetch target(s) could not be fetched` });
+    return yield* new PrefetchIncompleteError({ message: `${unfilled} date(s) could not be filled` });
   }
 
   yield* Effect.logInfo('Prefetch complete.');

@@ -200,7 +200,9 @@ export const TaxReportView = () => {
       const rates = new Map<string, number>();
       rates.set(DEFAULT_CURRENCY, 1);
       for (const e of entry.entries) {
-        rates.set(e.currency, e.rate);
+        // A blank published rate is not a usable rate; leaving it out of the map
+        // sends the lookup down the existing "no rate for this currency" path.
+        if (e.rate !== null) rates.set(e.currency, e.rate);
       }
       map.set(key, rates);
     }

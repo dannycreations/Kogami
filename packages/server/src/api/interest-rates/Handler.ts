@@ -7,9 +7,9 @@ export const scraper = makeScraper<InterestRateEntry>('interest', (dom) => {
   return Array.from(rows, (item) => {
     const row = item as Element;
     const tags = row.querySelector('td.text-left')?.textContent?.trim() || '';
-    const rateText = row.querySelector('td:last-child')?.textContent?.trim() || '0';
+    const rateText = row.querySelector('td:last-child')?.textContent?.trim() ?? '';
     const rateMatch = rateText.match(/([\d,]+)%/);
-    const rate = rateMatch ? parseFloat(rateMatch[1]!.replace(',', '.')) : 0;
+    const rate = rateMatch ? parseFloat(rateMatch[1]!.replace(',', '.')) : null;
     return { tags, rate };
   });
 });

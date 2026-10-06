@@ -15,7 +15,7 @@ const RateRow = memo(({ entry, style }: { entry: InterestRateEntry; style?: Reac
         </div>
       </div>
       <div className="v-cell border-r border-surface-100 text-right w-32 shrink-0 flex items-center justify-end">
-        <span className="badge badge-brand font-mono">{entry.rate.toFixed(2)}%</span>
+        <span className="badge badge-brand font-mono">{entry.rate === null ? 'Not set' : `${entry.rate.toFixed(2)}%`}</span>
       </div>
       <div className="v-cell text-center w-24 shrink-0 flex items-center justify-center">
         <span className="badge badge-emerald">Active</span>

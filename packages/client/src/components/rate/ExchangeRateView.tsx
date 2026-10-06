@@ -25,7 +25,9 @@ const CurrencyRow = memo(({ entry, style }: { entry: ExchangeRateEntry; style?: 
         </div>
       </div>
       <div className="v-cell border-r border-surface-100 text-right w-1/3 shrink-0 flex items-center justify-end">
-        <span className="font-mono text-[13px] font-medium text-surface-800">{IDR_FORMATTER.format(entry.rate)}</span>
+        <span className="font-mono text-[13px] font-medium text-surface-800">
+          {entry.rate === null ? 'Not published' : IDR_FORMATTER.format(entry.rate)}
+        </span>
       </div>
       <div className="v-cell text-center w-24 shrink-0 flex items-center justify-center">
         <span className="badge badge-emerald">Active</span>
